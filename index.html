@@ -6,6 +6,7 @@
 <title>Fin — Personal Finance Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+
 :root {
   --bg:#0f0f13;--bg2:#16161c;--surface:#1c1c24;--surface2:#22222c;--surface3:#2a2a36;
   --border:#2e2e3e;--border2:#3a3a4e;--text:#eeeef5;--text2:#a0a0b8;--text3:#5a5a7a;
@@ -308,6 +309,14 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 .gc-chart svg{width:100%;height:100%;}
 .goals-empty{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--text3);text-align:center;padding:38px 20px;border:1px dashed var(--border);border-radius:var(--r);letter-spacing:.06em;}
 @keyframes fadeIn{from{opacity:0;transform:translateX(-4px);}to{opacity:1;transform:translateX(0);}}
+
+/* Month selector */
+.month-sel-bar{display:flex;align-items:center;gap:14px;margin-bottom:18px;justify-content:center;}
+.month-nav{background:var(--surface);border:1px solid var(--border);color:var(--text2);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;transition:all .2s;font-family:'Outfit',sans-serif;}
+.month-nav:hover{border-color:var(--accent);color:var(--accent);background:var(--surface2);}
+.month-display{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:400;color:var(--text);min-width:180px;text-align:center;}
+.month-display em{color:var(--accent);font-style:italic;}
+
 </style>
 </head>
 <body>
@@ -316,70 +325,62 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 <nav>
   <div class="brand">Fin <span>personal finance</span></div>
   <div class="nav-r">
-    <div class="save-ind"><div class="save-dot" id="save-dot"></div><span class="save-txt">autosaved</span></div>
+    <div class="save-ind"><div class="save-dot"></div><span class="save-txt">autosaved</span></div>
     <select class="csel" id="currency-sel">
       <option value="$">$ USD</option><option value="€">€ EUR</option><option value="£">£ GBP</option>
-      <option value="¥">¥ JPY</option><option value="¥">¥ CNY</option><option value="₹">₹ INR</option>
-      <option value="C$">C$ CAD</option><option value="A$">A$ AUD</option><option value="Fr">Fr CHF</option>
-      <option value="R$">R$ BRL</option><option value="₩">₩ KRW</option><option value="kr">kr SEK</option>
-      <option value="S$">S$ SGD</option><option value="د.إ">د.إ AED</option><option value="R">R ZAR</option>
+      <option value="¥">¥ JPY</option><option value="₹">₹ INR</option><option value="C$">C$ CAD</option>
+      <option value="A$">A$ AUD</option><option value="Fr">Fr CHF</option><option value="R$">R$ BRL</option>
+      <option value="₩">₩ KRW</option><option value="kr">kr SEK</option><option value="S$">S$ SGD</option>
+      <option value="د.إ">د.إ AED</option><option value="R">R ZAR</option>
     </select>
     <div style="display:flex;align-items:center;gap:6px;">
       <div class="sp-pill">
-        <div class="sp-seg"><span class="sp-dot" style="background:var(--needs)"></span><input type="number" class="sp-num" id="split-needs" value="50" min="0" max="100"><span class="sp-pct">%</span></div>
-        <div class="sp-seg"><span class="sp-dot" style="background:var(--wants)"></span><input type="number" class="sp-num" id="split-wants" value="30" min="0" max="100"><span class="sp-pct">%</span></div>
-        <div class="sp-seg"><span class="sp-dot" style="background:var(--savings)"></span><input type="number" class="sp-num" id="split-savings" value="20" min="0" max="100"><span class="sp-pct">%</span></div>
+        <div class="sp-seg"><span class="sp-dot" style="background:var(--needs)"></span><input type="number" class="sp-num" id="split-n" value="50" min="0" max="100"><span class="sp-pct">%</span></div>
+        <div class="sp-seg"><span class="sp-dot" style="background:var(--wants)"></span><input type="number" class="sp-num" id="split-w" value="30" min="0" max="100"><span class="sp-pct">%</span></div>
+        <div class="sp-seg"><span class="sp-dot" style="background:var(--savings)"></span><input type="number" class="sp-num" id="split-s" value="20" min="0" max="100"><span class="sp-pct">%</span></div>
       </div>
-      <span class="sp-warn" id="split-warn" style="display:none">≠100%</span>
+      <span class="sp-warn" id="sp-warn" style="display:none">≠100%</span>
       <button class="sp-reset" onclick="resetSplit()" title="Reset to 50/30/20">↺</button>
     </div>
+    <button class="btn-ghost" onclick="exportPDF()" title="Export PDF report">📄 Export</button>
   </div>
 </nav>
 
 <div class="tabs">
   <button class="tab active" data-tab="budget">Budget</button>
-  <button class="tab" data-tab="monthly">Monthly</button>
   <button class="tab" data-tab="logs">Savings Log</button>
   <button class="tab" data-tab="networth">Net Worth</button>
   <button class="tab" data-tab="goals">Goals</button>
 </div>
 
-<!-- New month banner -->
-<div id="new-month-banner" style="display:none;background:linear-gradient(135deg,rgba(200,169,110,.12),rgba(200,169,110,.05));border:1px solid rgba(200,169,110,.3);border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-  <div style="display:flex;align-items:center;gap:12px;">
-    <span style="font-size:1.2rem;">📅</span>
-    <div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:2px;">New Month</div>
-      <div style="font-size:.82rem;color:var(--text2);" id="new-month-msg">It's a new month — update your income and budget for this month.</div>
-    </div>
-  </div>
-  <button onclick="goToMonthlyNow()" style="background:var(--accent);border:none;color:#0f0f13;font-family:'Outfit',sans-serif;font-size:.72rem;font-weight:600;padding:9px 16px;border-radius:7px;cursor:pointer;white-space:nowrap;flex-shrink:0;">Update Budget →</button>
-</div>
-
-<!-- BUDGET -->
+<!-- BUDGET (month-aware) -->
 <div class="panel active" id="panel-budget">
   <div class="page-hdr">
     <div class="page-tag" id="split-tag">50 / 30 / 20 Rule</div>
     <h1>Budget <em>Allocator</em></h1>
-    <p>Set your income and allocate expenses. All data saves automatically to your browser. <span id="current-month-badge" style="font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:.75rem;"></span></p>
+    <p>Set your income and allocate expenses per month. Data saves automatically.</p>
+  </div>
+  <!-- Month selector -->
+  <div class="month-sel-bar">
+    <button class="month-nav" id="prev-month">←</button>
+    <div class="month-display" id="month-display">May 2026</div>
+    <button class="month-nav" id="next-month">→</button>
   </div>
   <div class="income-bar">
-    <div class="inc-grp">
-      <label class="lbl">Income</label>
-      <div class="dollar-wrap"><span class="dollar-sign" id="dollar-sign">$</span><input type="number" id="income-inp" class="inc-num" value="5000" min="0" step="100"></div>
+    <div class="inc-grp"><label class="lbl">Income</label>
+      <div class="dollar-wrap"><span class="dollar-sign" id="dollar-sign">$</span><input type="number" id="income-inp" class="inc-num" value="0" min="0" step="100"></div>
     </div>
-    <div class="inc-grp">
-      <label class="lbl">Period</label>
+    <div class="inc-grp"><label class="lbl">Period</label>
       <div class="pbtns"><button class="pbtn active" data-period="monthly">Monthly</button><button class="pbtn" data-period="annual">Annual</button></div>
     </div>
-    <span class="inc-note" id="income-note">≈ $60,000/yr</span>
+    <span class="inc-note" id="income-note"></span>
   </div>
   <div class="rule"><div class="rule-n"></div><div class="rule-w"></div><div class="rule-s"></div></div>
   <div class="buckets">
     <div class="bucket bkt-n">
       <div class="bkt-head"><span class="bkt-name">Needs</span><span class="bkt-pct" id="needs-badge">50%</span></div>
-      <div class="bkt-target" id="needs-tgt">$2,500</div>
-      <div class="bkt-spent" id="needs-sp"><b>$0</b> spent of $2,500</div>
+      <div class="bkt-target" id="needs-tgt">$0</div>
+      <div class="bkt-spent" id="needs-sp"><b>$0</b> spent of $0</div>
       <div class="prog-bg"><div class="prog-fill" id="needs-fill"></div></div>
       <div class="items-list" id="needs-items"></div>
       <div class="overspent" id="needs-over">⚠ Over budget</div>
@@ -387,8 +388,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
     </div>
     <div class="bucket bkt-w">
       <div class="bkt-head"><span class="bkt-name">Wants</span><span class="bkt-pct" id="wants-badge">30%</span></div>
-      <div class="bkt-target" id="wants-tgt">$1,500</div>
-      <div class="bkt-spent" id="wants-sp"><b>$0</b> spent of $1,500</div>
+      <div class="bkt-target" id="wants-tgt">$0</div>
+      <div class="bkt-spent" id="wants-sp"><b>$0</b> spent of $0</div>
       <div class="prog-bg"><div class="prog-fill" id="wants-fill"></div></div>
       <div class="items-list" id="wants-items"></div>
       <div class="overspent" id="wants-over">⚠ Over budget</div>
@@ -396,8 +397,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
     </div>
     <div class="bucket bkt-s">
       <div class="bkt-head"><span class="bkt-name">Savings</span><span class="bkt-pct" id="savings-badge">20%</span></div>
-      <div class="bkt-target" id="savings-tgt">$1,000</div>
-      <div class="bkt-spent" id="savings-sp"><b>$0</b> saved of $1,000</div>
+      <div class="bkt-target" id="savings-tgt">$0</div>
+      <div class="bkt-spent" id="savings-sp"><b>$0</b> saved of $0</div>
       <div class="prog-bg"><div class="prog-fill" id="savings-fill"></div></div>
       <div class="items-list" id="savings-items"></div>
       <div class="overspent" id="savings-over">⚠ Over target</div>
@@ -412,7 +413,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
       </div>
       <div class="health-info">
         <div class="health-grade" id="health-grade" style="color:var(--good)">—</div>
-        <div class="health-desc" id="health-desc">Enter income and expenses to see your financial health score.</div>
+        <div class="health-desc" id="health-desc">Enter income and expenses to see your score.</div>
       </div>
       <div class="health-bars">
         <div class="hbar-row"><span class="hbar-lbl">Needs</span><div class="hbar-bg"><div class="hbar-fill" id="hb-needs" style="width:0%;background:var(--needs)"></div></div><span class="hbar-val" id="hbv-needs">0%</span></div>
@@ -438,9 +439,9 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
         <div class="leg-row"><div class="leg-dot" style="background:var(--border2)"></div><span class="leg-name">Free</span><span class="leg-val" id="leg-f">$0</span></div>
       </div>
       <div class="sum-grid">
-        <div><div class="sum-lbl">Income</div><div class="sum-val" id="sv-inc">$5,000</div><div class="sum-sub">per month</div></div>
+        <div><div class="sum-lbl">Income</div><div class="sum-val" id="sv-inc">$0</div><div class="sum-sub">per month</div></div>
         <div><div class="sum-lbl">Spent</div><div class="sum-val" id="sv-sp">$0</div><div class="sum-sub" id="sv-pct">0%</div></div>
-        <div><div class="sum-lbl">Remaining</div><div class="sum-val pos" id="sv-rem">$5,000</div><div class="sum-sub">unallocated</div></div>
+        <div><div class="sum-lbl">Remaining</div><div class="sum-val pos" id="sv-rem">$0</div><div class="sum-sub">unallocated</div></div>
         <div><div class="sum-lbl">Annual Savings</div><div class="sum-val" id="sv-yr">$0</div><div class="sum-sub">projected</div></div>
       </div>
     </div>
@@ -448,27 +449,12 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   <div class="tip" id="budget-tip">Enter your income above to get started.</div>
 </div>
 
-<!-- MONTHLY -->
-<div class="panel" id="panel-monthly">
-  <div class="page-hdr">
-    <div class="page-tag">Actual vs Budget</div>
-    <h1>Monthly <em>Tracker</em></h1>
-    <p>Log actual spending each month. Past months auto-populate from your budget.</p>
-  </div>
-  <div class="card month-box">
-    <div class="sec-head"><div class="sec-title">Select Month</div><select class="yr-sel" id="yr-sel"></select></div>
-    <div class="month-grid" id="month-grid"></div>
-    <div id="month-detail"></div>
-  </div>
-  <div class="tip"><strong>Tip:</strong> Your budget items appear as reference. Enter actual amounts and press Enter or click away — saves automatically.</div>
-</div>
-
 <!-- LOGS -->
 <div class="panel" id="panel-logs">
   <div class="page-hdr">
     <div class="page-tag">Running Totals</div>
     <h1>Savings &amp; Investment <em>Log</em></h1>
-    <p>Log every deposit linked to a goal. Totals persist between sessions.</p>
+    <p>Log every deposit linked to a goal. Totals persist across all months.</p>
   </div>
   <div class="logs-grid">
     <div class="log-card sav-log">
@@ -477,7 +463,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
       <div class="log-ttl-sub" id="sav-count">0 entries</div>
       <div class="log-add-s">
         <div class="log-add-r1">
-          <div class="log-add-grp"><label class="lbl">Date</label><input type="month" id="sl-date" class="inp" style="width:132px"></div>
+          <div class="log-add-grp"><label class="lbl">Date</label><input type="date" id="sl-date" class="inp" style="width:148px"></div>
           <div class="log-add-grp" style="flex:1;min-width:90px"><label class="lbl">Goal</label><select id="sl-goal" class="inp"></select></div>
           <div class="log-add-grp" style="flex:2;min-width:90px"><label class="lbl">Note</label><input type="text" id="sl-note" class="inp" placeholder="Note"></div>
         </div>
@@ -496,7 +482,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
       <div class="log-ttl-sub" id="inv-count">0 entries</div>
       <div class="log-add-s">
         <div class="log-add-r1">
-          <div class="log-add-grp"><label class="lbl">Date</label><input type="month" id="il-date" class="inp" style="width:132px"></div>
+          <div class="log-add-grp"><label class="lbl">Date</label><input type="date" id="il-date" class="inp" style="width:148px"></div>
           <div class="log-add-grp" style="flex:1;min-width:90px"><label class="lbl">Goal</label><select id="il-goal" class="inp"></select></div>
           <div class="log-add-grp" style="flex:2;min-width:90px"><label class="lbl">Note</label><input type="text" id="il-note" class="inp" placeholder="Note"></div>
         </div>
@@ -510,7 +496,6 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
       <div class="goal-strips" id="inv-strips"></div>
     </div>
   </div>
-  <div class="tip"><strong>Editable:</strong> Click any field in an entry to edit inline. Select a goal to track progress below.</div>
 </div>
 
 <!-- NET WORTH -->
@@ -518,7 +503,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   <div class="page-hdr">
     <div class="page-tag">Balance Sheet</div>
     <h1>Net <em>Worth</em></h1>
-    <p>Assets minus liabilities — your true financial position, updated as you track months.</p>
+    <p>Assets minus liabilities — updated as you track months.</p>
   </div>
   <div class="nw-hero">
     <div class="nw-hero-lbl">Total Net Worth</div>
@@ -527,32 +512,16 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   </div>
   <div class="nw-cols">
     <div class="nw-col assets">
-      <div class="nw-col-head"><span class="nw-col-title">Assets</span><span class="nw-col-total" id="nw-assets-total">$0</span></div>
-      <div class="nw-items" id="nw-assets-list"></div>
+      <div class="nw-col-head"><span class="nw-col-title">Assets</span><span class="nw-col-total" id="nw-a-total">$0</span></div>
+      <div class="nw-items" id="nw-a-list"></div>
       <button class="nw-add-btn" onclick="addNwItem('assets')">+ Add asset</button>
     </div>
     <div class="nw-col liabilities">
-      <div class="nw-col-head"><span class="nw-col-title">Liabilities</span><span class="nw-col-total" id="nw-liab-total">$0</span></div>
-      <div class="nw-items" id="nw-liab-list"></div>
+      <div class="nw-col-head"><span class="nw-col-title">Liabilities</span><span class="nw-col-total" id="nw-l-total">$0</span></div>
+      <div class="nw-items" id="nw-l-list"></div>
       <button class="nw-add-btn" onclick="addNwItem('liabilities')">+ Add liability</button>
     </div>
   </div>
-
-  <!-- Yearly Net Worth Tracker -->
-  <div class="card" style="margin-top:14px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
-      <div>
-        <div class="page-tag" style="margin-bottom:4px;">Year in Review</div>
-        <div style="font-family:'Playfair Display',serif;font-size:1rem;color:var(--text);">Monthly Net Worth <em style="color:var(--accent);">Progress</em></div>
-      </div>
-      <select class="yr-sel" id="nw-yr-sel"></select>
-    </div>
-    <div id="nw-year-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-bottom:18px;"></div>
-    <div id="nw-year-bar" style="display:flex;align-items:flex-end;gap:4px;height:60px;padding:0 2px;"></div>
-    <div style="display:flex;justify-content:space-between;margin-top:6px;" id="nw-bar-labels"></div>
-  </div>
-
-  <div class="tip" style="margin-top:14px;"><strong>Savings & Investments auto-populate</strong> from your log totals. Add extra assets (property, vehicles) manually. Liabilities start empty — add what you owe when ready. Monthly net worth updates as you log spending in the Monthly tab.</div>
 </div>
 
 <!-- GOALS -->
@@ -560,11 +529,11 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
   <div class="page-hdr">
     <div class="page-tag">Financial Goals</div>
     <h1>Savings &amp; Investment <em>Goals</em></h1>
-    <p>Create goals — they appear in your log as options. Add as many as you need.</p>
+    <p>Create goals — they appear in your log as options.</p>
   </div>
   <div class="goal-add-bar">
     <span class="goal-add-lbl">New goal</span>
-    <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px"><label class="lbl">Name</label><input type="text" id="new-goal-name" class="inp" placeholder="e.g. Down Payment"></div>
+    <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px"><label class="lbl">Name</label><input type="text" id="new-goal-name" class="inp" placeholder="e.g. Emergency Fund"></div>
     <div style="display:flex;flex-direction:column;gap:4px;min-width:120px"><label class="lbl">Type</label><select id="new-goal-type" class="inp"><option value="savings">Savings</option><option value="invest">Investment</option></select></div>
     <button class="btn" id="add-goal-btn" style="align-self:flex-end">+ Add Goal</button>
   </div>
@@ -573,127 +542,156 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 
 </div>
 <script>
-const SK='fin-v2';
+const SK='fin-v6';
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 let period='monthly';
+let curMonth=''; // "2026-05" format
+
+// Default state — completely empty
 const def={
-  income:0,currency:'$',split:{needs:50,wants:30,savings:20},
-  budget:{needs:[],wants:[],savings:[]},
-  monthlyActual:{},
+  currency:'$',split:{needs:50,wants:30,savings:20},
+  months:{}, // {"2026-05":{income:0,budget:{needs:[],wants:[],savings:[]}}}
   logs:{savings:[],invest:[]},
-  goals:[],
-  nextGoalId:1,
+  goals:[],nextGoalId:1,
   networth:{assets:[],liabilities:[]}
 };
 let S=JSON.parse(JSON.stringify(def));
-let selMonth=null;
 
+// ── UTILS ──
+function sym(){return S.currency||'$';}
+function fmt(n){return sym()+Math.abs(n||0).toLocaleString('en-US',{maximumFractionDigits:0});}
+function todayStr(){const d=new Date();return d.toISOString().split('T')[0];}
+function monthKey(d){if(!d)d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function monthLabel(key){const[y,m]=key.split('-');return MONTHS[parseInt(m)-1]+' '+y;}
+function getMonthState(){
+  if(!S.months[curMonth]) S.months[curMonth]={income:0,budget:{needs:[],wants:[],savings:[]}};
+  return S.months[curMonth];
+}
+function bucketTotal(b){return getMonthState().budget[b].reduce((s,i)=>s+(i.amount||0),0);}
+function getIncome(){const v=getMonthState().income||0;return period==='annual'?v/12:v;}
+function getSplit(){return{needs:S.split.needs/100,wants:S.split.wants/100,savings:S.split.savings/100};}
+function getLogTotal(goalId,type){return S.logs[type].filter(e=>e.goalId===goalId).reduce((s,e)=>s+e.amount,0);}
+
+// ── SAVE/LOAD ──
+let saveT=null;
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}},500);}
 function load(){
   try{
-    const d=localStorage.getItem(SK);
-    if(d){
-      const p=JSON.parse(d);
-      S=Object.assign({},def,p);
-      S.budget=p.budget||def.budget;
-      S.logs=p.logs||def.logs;
-      S.goals=p.goals||def.goals;
-      S.networth=p.networth||def.networth;
-      S.monthlyActual=p.monthlyActual||{};
-      // Dedupe goals by id (old bug could create duplicates)
+    const raw=localStorage.getItem(SK);
+    if(!raw)return;
+    const p=JSON.parse(raw);
+    if(typeof p.currency==='string') S.currency=p.currency;
+    if(p.split&&typeof p.split.needs==='number') S.split=p.split;
+    if(p.months&&typeof p.months==='object') S.months=p.months;
+    if(p.logs){
+      if(Array.isArray(p.logs.savings)) S.logs.savings=p.logs.savings;
+      if(Array.isArray(p.logs.invest)) S.logs.invest=p.logs.invest;
+    }
+    if(Array.isArray(p.goals)){
       const seen=new Set();
-      S.goals=S.goals.filter(g=>{if(seen.has(g.id))return false;seen.add(g.id);return true;});
-      // Ensure nextGoalId is always higher than any existing goal id
+      S.goals=p.goals.filter(g=>g&&g.id&&!seen.has(g.id)&&seen.add(g.id));
       if(S.goals.length) S.nextGoalId=Math.max(...S.goals.map(g=>g.id))+1;
+    }
+    if(p.networth){
+      if(Array.isArray(p.networth.assets)) S.networth.assets=p.networth.assets;
+      if(Array.isArray(p.networth.liabilities)) S.networth.liabilities=p.networth.liabilities;
     }
   }catch(e){console.log('Load error',e);}
 }
 
-let saveT=null;
-function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}},500);}
-
-const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const sym=()=>S.currency||'$';
-const fmt=n=>sym()+Math.abs(n||0).toLocaleString('en-US',{maximumFractionDigits:0});
-const nowStr=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;};
-const bucketTotal=b=>S.budget[b].reduce((s,i)=>s+(i.amount||0),0);
-const getIncome=()=>{const v=parseFloat(document.getElementById('income-inp').value)||0;return period==='annual'?v/12:v;};
-const getSplit=()=>({needs:S.split.needs/100,wants:S.split.wants/100,savings:S.split.savings/100});
-
-// Tabs
+// ── TABS ──
 document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
     document.getElementById('panel-'+t.dataset.tab).classList.add('active');
-    if(t.dataset.tab==='monthly')initMonthly();
     if(t.dataset.tab==='logs')renderLogs();
-    if(t.dataset.tab==='goals'){renderGoals();}
+    if(t.dataset.tab==='goals')renderGoals();
     if(t.dataset.tab==='networth')renderNW();
   });
 });
 
-// Split
-function updateSplitUI(){
-  const n=parseFloat(document.getElementById('split-needs').value)||0;
-  const w=parseFloat(document.getElementById('split-wants').value)||0;
-  const sv=parseFloat(document.getElementById('split-savings').value)||0;
+// ── MONTH NAVIGATION ──
+function setMonth(key){
+  curMonth=key;
+  document.getElementById('month-display').innerHTML=monthLabel(key);
+  // Load this month's data into the UI
+  const ms=getMonthState();
+  document.getElementById('income-inp').value=ms.income||0;
+  ['needs','wants','savings'].forEach(b=>renderBucketItems(b));
+  recalc();
+}
+function shiftMonth(delta){
+  const[y,m]=curMonth.split('-').map(Number);
+  const d=new Date(y,m-1+delta,1);
+  setMonth(monthKey(d));
+}
+document.getElementById('prev-month').addEventListener('click',()=>shiftMonth(-1));
+document.getElementById('next-month').addEventListener('click',()=>shiftMonth(1));
+
+// ── SPLIT ──
+function updateSplit(){
+  const n=parseFloat(document.getElementById('split-n').value)||0;
+  const w=parseFloat(document.getElementById('split-w').value)||0;
+  const sv=parseFloat(document.getElementById('split-s').value)||0;
   const t=n+w+sv;
-  document.getElementById('split-warn').style.display=t===100?'none':'block';
+  document.getElementById('sp-warn').style.display=t===100?'none':'block';
   const rn=document.querySelector('.rule-n'),rw=document.querySelector('.rule-w'),rs=document.querySelector('.rule-s');
   if(rn){rn.style.flex=n;rw.style.flex=w;rs.style.flex=sv;}
-  if(t===100){S.split={needs:n,wants:w,savings:sv};const tag=document.getElementById('split-tag');if(tag)tag.textContent=n===50&&w===30&&sv===20?'50 / 30 / 20 Rule':`${n} / ${w} / ${sv} Rule`;recalc();save();}
+  if(t===100){
+    S.split={needs:n,wants:w,savings:sv};
+    document.getElementById('split-tag').textContent=n===50&&w===30&&sv===20?'50 / 30 / 20 Rule':n+' / '+w+' / '+sv+' Rule';
+    recalc();save();
+  }
 }
-function resetSplit(){document.getElementById('split-needs').value=50;document.getElementById('split-wants').value=30;document.getElementById('split-savings').value=20;S.split={needs:50,wants:30,savings:20};document.getElementById('split-warn').style.display='none';document.getElementById('split-tag').textContent='50 / 30 / 20 Rule';recalc();save();}
-['split-needs','split-wants','split-savings'].forEach(id=>{const el=document.getElementById(id);el.addEventListener('input',updateSplitUI);el.addEventListener('blur',updateSplitUI);});
+function resetSplit(){
+  document.getElementById('split-n').value=50;document.getElementById('split-w').value=30;document.getElementById('split-s').value=20;
+  S.split={needs:50,wants:30,savings:20};document.getElementById('sp-warn').style.display='none';
+  document.getElementById('split-tag').textContent='50 / 30 / 20 Rule';recalc();save();
+}
+['split-n','split-w','split-s'].forEach(id=>{const el=document.getElementById(id);el.addEventListener('input',updateSplit);el.addEventListener('blur',updateSplit);});
+document.getElementById('currency-sel').addEventListener('change',function(){
+  S.currency=this.options[this.selectedIndex].value;
+  document.getElementById('dollar-sign').textContent=S.currency;recalc();renderLogs();renderNW();save();
+});
 
-document.getElementById('currency-sel').addEventListener('change',function(){S.currency=this.options[this.selectedIndex].value;document.getElementById('dollar-sign').textContent=S.currency;recalc();renderLogs();renderNW();save();});
-
-// Budget
+// ── BUDGET ──
 function renderBucketItems(b){
+  const ms=getMonthState();
   const el=document.getElementById(b+'-items');el.innerHTML='';
-  S.budget[b].forEach((item,i)=>{
+  ms.budget[b].forEach((item,i)=>{
     const row=document.createElement('div');row.className='item-row';
     const n=document.createElement('input');n.type='text';n.className='item-name-i';n.value=item.name;n.placeholder='Expense name';
-    n.addEventListener('blur',e=>{S.budget[b][i].name=e.target.value;save();});
+    n.addEventListener('blur',e=>{getMonthState().budget[b][i].name=e.target.value;save();});
     const a=document.createElement('input');a.type='number';a.className='item-amt-i';a.value=item.amount||'';a.placeholder='0';a.min='0';
-    const commit=e=>{S.budget[b][i].amount=parseFloat(e.target.value)||0;recalc();save();};
+    const commit=e=>{getMonthState().budget[b][i].amount=parseFloat(e.target.value)||0;recalc();save();};
     a.addEventListener('blur',commit);a.addEventListener('keydown',e=>{if(e.key==='Enter'){commit(e);a.blur();}});
-    const d=document.createElement('button');d.className='item-del';d.textContent='×';
-    d.addEventListener('click',()=>{S.budget[b].splice(i,1);renderBucketItems(b);recalc();save();});
+    const d=document.createElement('button');d.className='item-del';d.textContent='\u00d7';
+    d.addEventListener('click',()=>{getMonthState().budget[b].splice(i,1);renderBucketItems(b);recalc();save();});
     row.append(n,a,d);el.appendChild(row);
   });
 }
-function addBucketItem(b){S.budget[b].push({name:'',amount:0});renderBucketItems(b);recalc();save();const ins=document.getElementById(b+'-items').querySelectorAll('.item-name-i');if(ins.length)ins[ins.length-1].focus();}
-
-function calcHealth(tot,tgt,inc){
-  if(inc<=0)return null;
-  const sp=getSplit();
-  let score=0;
-  score+=Math.min((tot.savings/inc)/(sp.savings||.2),1.2)*40;
-  score+=Math.max(0,1-(Math.max(tgt.needs>0?tot.needs/tgt.needs:0,1)-1))*30;
-  score+=Math.max(0,1-(Math.max(tgt.wants>0?tot.wants/tgt.wants:0,1)-1)*1.5)*20;
-  score+=10;
-  return Math.min(Math.round(score),100);
+function addBucketItem(b){
+  getMonthState().budget[b].push({name:'',amount:0});
+  renderBucketItems(b);recalc();save();
+  const inputs=document.getElementById(b+'-items').querySelectorAll('.item-name-i');
+  if(inputs.length)inputs[inputs.length-1].focus();
 }
+document.querySelectorAll('.add-item-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>addBucketItem(btn.dataset.bucket));
+});
 
-function renderHealth(score,tot,inc){
-  const arc=document.getElementById('health-arc'),num=document.getElementById('health-num'),grade=document.getElementById('health-grade'),desc=document.getElementById('health-desc');
-  if(score===null){num.textContent='—';grade.textContent='—';desc.textContent='Enter income and expenses to see your financial health score.';arc.setAttribute('stroke-dasharray','0 214');return;}
-  const len=(score/100)*214;arc.setAttribute('stroke-dasharray',`${len} ${214-len}`);
-  const col=score>=80?'var(--good)':score>=60?'var(--wants)':'var(--warn)';
-  arc.setAttribute('stroke',col);num.textContent=score;num.style.color=col;
-  const grades=[[90,'Excellent','Your finances are in great shape — keep it up!'],[75,'Very Good','Strong habits. Small tweaks could push you higher.'],[60,'Good','On track. Focus on growing your savings rate.'],[45,'Fair','Some areas need attention — especially savings.'],[0,'Needs Work','Time to revisit your budget. Start by reducing wants.']];
-  const [,g,d]=grades.find(([t])=>score>=t)||grades[grades.length-1];
-  grade.textContent=g;grade.style.color=col;desc.textContent=d;
-  const sp=getSplit();
-  ['needs','wants','savings'].forEach(b=>{
-    const pct=inc>0?Math.min((tot[b]/inc)*100,100):0,tgt=sp[b]*100;
-    const el=document.getElementById('hb-'+b),vel=document.getElementById('hbv-'+b);
-    if(el){el.style.width=pct+'%';el.style.background=pct>tgt?'var(--warn)':`var(--${b==='savings'?'savings':b==='wants'?'wants':'needs'})`;}
-    if(vel)vel.textContent=pct.toFixed(0)+'%';
-  });
-}
+// Income
+const incEl=document.getElementById('income-inp');
+function commitIncome(){getMonthState().income=parseFloat(incEl.value)||0;recalc();save();}
+incEl.addEventListener('blur',commitIncome);
+incEl.addEventListener('keydown',e=>{if(e.key==='Enter'){commitIncome();incEl.blur();}});
+document.querySelectorAll('.pbtn').forEach(btn=>{
+  btn.addEventListener('click',()=>{document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');period=btn.dataset.period;recalc();});
+});
 
+// ── RECALC ──
 function recalc(){
   const inc=getIncome(),sp=getSplit();
   const tgt={needs:inc*sp.needs,wants:inc*sp.wants,savings:inc*sp.savings};
@@ -701,7 +699,7 @@ function recalc(){
   const spent=tot.needs+tot.wants+tot.savings,rem=inc-spent;
   ['needs','wants','savings'].forEach(b=>{
     document.getElementById(b+'-tgt').textContent=fmt(tgt[b]);
-    document.getElementById(b+'-sp').innerHTML=`<b>${fmt(tot[b])}</b> ${b==='savings'?'saved':'spent'} of ${fmt(tgt[b])}`;
+    document.getElementById(b+'-sp').innerHTML='<b>'+fmt(tot[b])+'</b> '+(b==='savings'?'saved':'spent')+' of '+fmt(tgt[b]);
     const pct=tgt[b]>0?Math.min((tot[b]/tgt[b])*100,100):0;
     document.getElementById(b+'-fill').style.width=pct+'%';
     document.getElementById(b+'-over').style.display=tot[b]>tgt[b]+.5?'block':'none';
@@ -709,469 +707,437 @@ function recalc(){
   });
   document.getElementById('sv-inc').textContent=fmt(inc);
   document.getElementById('sv-sp').textContent=fmt(spent);
-  document.getElementById('sv-pct').textContent=inc>0?`${Math.round((spent/inc)*100)}% of income`:'—';
+  document.getElementById('sv-pct').textContent=inc>0?Math.round((spent/inc)*100)+'% of income':'--';
   const re=document.getElementById('sv-rem');re.textContent=fmt(rem);re.className='sum-val '+(rem>=0?'pos':'neg');
   document.getElementById('sv-yr').textContent=fmt(tot.savings*12);
   document.getElementById('leg-n').textContent=fmt(tot.needs);document.getElementById('leg-w').textContent=fmt(tot.wants);
   document.getElementById('leg-s').textContent=fmt(tot.savings);document.getElementById('leg-f').textContent=fmt(Math.max(rem,0));
-  document.getElementById('income-note').textContent=period==='annual'?`≈ ${fmt(inc)}/mo`:`≈ ${fmt(inc*12)}/yr`;
+  document.getElementById('income-note').textContent=period==='annual'?'\u2248 '+fmt(inc)+'/mo':'\u2248 '+fmt(inc*12)+'/yr';
   document.getElementById('dollar-sign').textContent=sym();
+  // Donut
   const circ=2*Math.PI*33;
-  document.getElementById('donut-pct').textContent=inc>0?`${Math.round(Math.min(spent/inc,1)*100)}%`:'0%';
+  document.getElementById('donut-pct').textContent=inc>0?Math.round(Math.min(spent/inc,1)*100)+'%':'0%';
   if(inc>0){
     const nL=Math.min(tot.needs/inc,1)*circ,wL=Math.min(tot.wants/inc,1)*circ,sL=Math.min(tot.savings/inc,1)*circ;
-    const dn=document.getElementById('dc-n');dn.setAttribute('stroke-dasharray',`${nL} ${circ-nL}`);dn.setAttribute('stroke-dashoffset','0');
-    const dw=document.getElementById('dc-w');dw.setAttribute('stroke-dasharray',`${wL} ${circ-wL}`);dw.setAttribute('stroke-dashoffset',`${-nL}`);
-    const ds=document.getElementById('dc-s');ds.setAttribute('stroke-dasharray',`${sL} ${circ-sL}`);ds.setAttribute('stroke-dashoffset',`${-(nL+wL)}`);
+    const dn=document.getElementById('dc-n');dn.setAttribute('stroke-dasharray',nL+' '+(circ-nL));dn.setAttribute('stroke-dashoffset','0');
+    const dw=document.getElementById('dc-w');dw.setAttribute('stroke-dasharray',wL+' '+(circ-wL));dw.setAttribute('stroke-dashoffset',String(-nL));
+    const ds=document.getElementById('dc-s');ds.setAttribute('stroke-dasharray',sL+' '+(circ-sL));ds.setAttribute('stroke-dashoffset',String(-(nL+wL)));
   }
-  renderHealth(calcHealth(tot,tgt,inc),tot,inc);
+  // Health
+  renderHealth(tot,tgt,inc);
+  // Tip
   const tip=document.getElementById('budget-tip');
   const overN=tot.needs>tgt.needs+.5,overW=tot.wants>tgt.wants+.5;
   if(inc<=0)tip.innerHTML='<strong>Get started:</strong> Enter your monthly income above.';
-  else if(overN&&overW)tip.innerHTML=`<strong>Both needs & wants are over budget.</strong> Try cutting ${fmt(tot.wants-tgt.wants)} from wants first.`;
-  else if(overN)tip.innerHTML=`<strong>Needs over budget</strong> by ${fmt(tot.needs-tgt.needs)}. Housing and transport are the biggest levers.`;
-  else if(overW)tip.innerHTML=`<strong>Wants over budget</strong> by ${fmt(tot.wants-tgt.wants)}. Audit subscriptions you haven't used in 30 days.`;
-  else if(rem>0)tip.innerHTML=`<strong>${fmt(rem)} unallocated.</strong> Move it into savings or investments.`;
-  else tip.innerHTML=`<strong>Budget balanced.</strong> Projected annual savings: <strong>${fmt(tot.savings*12)}</strong>.`;
-  S.income=inc;save();
+  else if(overN&&overW)tip.innerHTML='<strong>Both needs & wants are over budget.</strong> Try cutting '+fmt(tot.wants-tgt.wants)+' from wants first.';
+  else if(overN)tip.innerHTML='<strong>Needs over budget</strong> by '+fmt(tot.needs-tgt.needs)+'.';
+  else if(overW)tip.innerHTML='<strong>Wants over budget</strong> by '+fmt(tot.wants-tgt.wants)+'.';
+  else if(rem>0)tip.innerHTML='<strong>'+fmt(rem)+' unallocated.</strong> Move it into savings or investments.';
+  else tip.innerHTML='<strong>Budget balanced.</strong> Projected annual savings: <strong>'+fmt(tot.savings*12)+'</strong>.';
 }
 
-const incEl=document.getElementById('income-inp');
-incEl.addEventListener('keyup',recalc);incEl.addEventListener('blur',recalc);
-document.querySelectorAll('.pbtn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');period=btn.dataset.period;recalc();});});
-document.querySelectorAll('.add-item-btn').forEach(btn=>{btn.addEventListener('click',()=>addBucketItem(btn.dataset.bucket));});
-
-// Monthly
-function initMonthly(){
-  const sel=document.getElementById('yr-sel');
-  if(!sel.options.length){const now=new Date();for(let y=now.getFullYear()-1;y<=now.getFullYear()+1;y++){const o=document.createElement('option');o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;sel.appendChild(o);}sel.addEventListener('change',renderMonthGrid);}
-  if(!selMonth)selMonth=nowStr();renderMonthGrid();
-}
-function getMonthData(key){
-  if(S.monthlyActual[key])return{data:S.monthlyActual[key],isDefault:false};
-  const[y,m]=key.split('-').map(Number);
-  const now=new Date(),isCurMon=y===now.getFullYear()&&m===now.getMonth()+1;
-  if(isCurMon)return{data:{needs:bucketTotal('needs'),wants:bucketTotal('wants'),savings:bucketTotal('savings')},isDefault:true};
-  return null;
-}
-function renderMonthGrid(){
-  const year=parseInt(document.getElementById('yr-sel').value),inc=getIncome();
-  const grid=document.getElementById('month-grid');grid.innerHTML='';const now=new Date();
-  MONTHS.forEach((m,i)=>{
-    const key=`${year}-${String(i+1).padStart(2,'0')}`;
-    const entry=getMonthData(key);
-    const total=entry?(entry.data.needs||0)+(entry.data.wants||0)+(entry.data.savings||0):0;
-    const pct=inc>0?Math.min((total/inc)*100,100):0,isOver=inc>0&&total>inc+.5;
-    const isCurrent=year===now.getFullYear()&&i===now.getMonth();
-    const card=document.createElement('div');card.className='mcell'+(selMonth===key?' sel':'');
-    card.innerHTML=`<div class="mcell-name">${m}${isCurrent?' ·':''}</div><div class="mcell-total" style="${entry&&entry.isDefault?'color:var(--text3)':''}">${total>0?fmt(total):'—'}</div><div class="mcell-bar"><div class="mcell-fill ${isOver?'over':''}" style="width:${pct}%"></div></div>`;
-    card.addEventListener('click',()=>{selMonth=key;renderMonthGrid();});grid.appendChild(card);
-  });
-  if(selMonth)renderMonthDetail(selMonth);
-}
-function isBlankMonthData(d){
-  // Returns true if the stored data is all zeros (bad auto-save from before) or missing
-  return !d || ((d.needs||0)===0 && (d.wants||0)===0 && (d.savings||0)===0);
-}
-function renderMonthDetail(key){
-  const[y,m]=key.split('-'),label=`${MONTHS[parseInt(m)-1]} ${y}`;
-  const inc=getIncome(),sp=getSplit();
-  const tgt={needs:inc*sp.needs,wants:inc*sp.wants,savings:inc*sp.savings};
-  // If no real data yet (missing or all zeros from bad prior save), pre-fill from budget
-  // but DON'T save yet — only save when user actually edits a field
-  const[ky,km]=key.split('-').map(Number),now=new Date();
-  const isCurrentMonth=ky===now.getFullYear()&&km===now.getMonth()+1;
-  const defaults=isCurrentMonth?{needs:bucketTotal('needs'),wants:bucketTotal('wants'),savings:bucketTotal('savings')}:{needs:0,wants:0,savings:0};
-  const hasRealData = S.monthlyActual[key] && !isBlankMonthData(S.monthlyActual[key]);
-  const existing = hasRealData ? S.monthlyActual[key] : defaults;
-  const detail=document.getElementById('month-detail');
-  detail.innerHTML=`<div class="mdetail-lbl">Actual spending — ${label}</div><div class="mcats">${['needs','wants','savings'].map(b=>{
-    const actual=existing[b]||0;
-    const diff=tgt[b]-actual;
-    const items=S.budget[b].map(item=>`<div class="mitem-row"><span class="mitem-name">${item.name||'—'}</span><span class="mitem-val">${fmt(item.amount)}</span></div>`).join('');
-    return`<div class="mcat ${b}"><div class="mcat-name">${b}</div><div class="mcat-budg-row"><span class="mcat-budg-lbl">Target</span><span class="mcat-budg-val">${fmt(tgt[b])}</span></div><input type="number" class="mcat-inp" value="${actual}" data-key="${key}" data-bucket="${b}" min="0"><div class="mdiff ${diff>=0?'under':'over'}">${diff>=0?`↓ ${fmt(diff)} under`:`↑ ${fmt(Math.abs(diff))} over`}</div><div class="mitems-list">${items}</div></div>`;
-  }).join('')}</div>`;
-  detail.querySelectorAll('.mcat-inp').forEach(inp=>{
-    const commit=e=>{
-      const k=e.target.dataset.key,bucket=e.target.dataset.bucket;
-      const val=parseFloat(e.target.value)||0;
-      // Save all three fields when user edits one — use current input values not just this one
-      const inps=detail.querySelectorAll('.mcat-inp');
-      const vals={};
-      inps.forEach(i=>{ vals[i.dataset.bucket]=parseFloat(i.value)||0; });
-      S.monthlyActual[k]=vals;
-      updateMonthCards();
-      if(typeof renderNW==='function')renderNW();
-      save();
-      // Re-render diffs inline
-      const diff=tgt[bucket]-val;
-      const diffEl=e.target.nextElementSibling;
-      if(diffEl&&diffEl.classList.contains('mdiff')){
-        diffEl.className='mdiff '+(diff>=0?'under':'over');
-        diffEl.textContent=diff>=0?`↓ ${fmt(diff)} under`:`↑ ${fmt(Math.abs(diff))} over`;
-      }
-    };
-    inp.addEventListener('blur',commit);
-    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){commit(e);inp.blur();}});
-  });
-  // Update month card to show pre-filled total immediately (but don't persist yet)
-  const card=document.querySelector(`.mcell.sel`);
-  if(card&&!hasRealData){
-    const total=(existing.needs||0)+(existing.wants||0)+(existing.savings||0);
-    const tv=card.querySelector('.mcell-total');
-    if(tv){tv.textContent=total>0?fmt(total):'—';tv.style.color='var(--text3)';}
-  }
-}
-function updateMonthCards(){
-  const year=parseInt(document.getElementById('yr-sel').value),inc=getIncome();
-  document.querySelectorAll('.mcell').forEach((card,i)=>{
-    const key=`${year}-${String(i+1).padStart(2,'0')}`;
-    const entry=getMonthData(key);
-    const total=entry?(entry.data.needs||0)+(entry.data.wants||0)+(entry.data.savings||0):0;
-    const pct=inc>0?Math.min((total/inc)*100,100):0,isOver=inc>0&&total>inc+.5;
-    const tv=card.querySelector('.mcell-total'),fb=card.querySelector('.mcell-fill');
-    if(tv){tv.textContent=total>0?fmt(total):'—';tv.style.color=entry&&entry.isDefault?'var(--text3)':'';}
-    if(fb){fb.style.width=pct+'%';fb.className='mcell-fill'+(isOver?' over':'');}
+function renderHealth(tot,tgt,inc){
+  const arc=document.getElementById('health-arc'),num=document.getElementById('health-num'),grade=document.getElementById('health-grade'),desc=document.getElementById('health-desc');
+  if(inc<=0){num.textContent='\u2014';grade.textContent='\u2014';desc.textContent='Enter income and expenses to see your score.';arc.setAttribute('stroke-dasharray','0 214');return;}
+  const sp=getSplit();
+  let score=0;
+  score+=Math.min((tot.savings/inc)/(sp.savings||.2),1.2)*40;
+  score+=Math.max(0,1-(Math.max(tgt.needs>0?tot.needs/tgt.needs:0,1)-1))*30;
+  score+=Math.max(0,1-(Math.max(tgt.wants>0?tot.wants/tgt.wants:0,1)-1)*1.5)*20;
+  score+=10;
+  score=Math.min(Math.round(score),100);
+  const len=(score/100)*214;arc.setAttribute('stroke-dasharray',len+' '+(214-len));
+  const col=score>=80?'var(--good)':score>=60?'var(--wants)':'var(--warn)';
+  arc.setAttribute('stroke',col);num.textContent=score;num.style.color=col;
+  const grades=[[90,'Excellent','Your finances are in great shape!'],[75,'Very Good','Strong habits. Small tweaks could push you higher.'],[60,'Good','On track. Focus on growing your savings rate.'],[45,'Fair','Some areas need attention.'],[0,'Needs Work','Time to revisit your budget.']];
+  const[,g,d]=grades.find(function(x){return score>=x[0];})||grades[grades.length-1];
+  grade.textContent=g;grade.style.color=col;desc.textContent=d;
+  ['needs','wants','savings'].forEach(function(b){
+    var pct=inc>0?Math.min((tot[b]/inc)*100,100):0,target=sp[b]*100;
+    var el=document.getElementById('hb-'+b),vel=document.getElementById('hbv-'+b);
+    if(el){el.style.width=pct+'%';el.style.background=pct>target?'var(--warn)':'var(--'+b+')';}
+    if(vel)vel.textContent=pct.toFixed(0)+'%';
   });
 }
 
-// Logs
+// ── LOGS ──
 function syncDropdowns(){
-  [['sl-goal','savings'],['il-goal','invest']].forEach(([selId,type])=>{
-    const sel=document.getElementById(selId);if(!sel)return;
-    const cur=sel.value;sel.innerHTML='<option value="">— None —</option>';
-    S.goals.filter(g=>g.type===type).forEach(g=>{const o=document.createElement('option');o.value=g.id;o.textContent=g.name;if(String(g.id)===cur)o.selected=true;sel.appendChild(o);});
+  [['sl-goal','savings'],['il-goal','invest']].forEach(function(pair){
+    var sel=document.getElementById(pair[0]);if(!sel)return;
+    var cur=sel.value;sel.innerHTML='<option value="">-- None --</option>';
+    S.goals.filter(function(g){return g.type===pair[1];}).forEach(function(g){
+      var o=document.createElement('option');o.value=g.id;o.textContent=g.name;
+      if(String(g.id)===cur)o.selected=true;sel.appendChild(o);
+    });
   });
 }
 function addLogEntry(type){
-  const pre=type==='savings'?'sl':'il';
-  const date=document.getElementById(pre+'-date').value||nowStr();
-  const goalId=parseInt(document.getElementById(pre+'-goal').value)||null;
-  const goalName=goalId?(S.goals.find(g=>g.id===goalId)?.name||''):'';
-  const note=document.getElementById(pre+'-note').value.trim()||goalName||(type==='savings'?'Savings deposit':'Investment contribution');
-  const amount=parseFloat(document.getElementById(pre+'-amt').value)||0;
+  var pre=type==='savings'?'sl':'il';
+  var date=document.getElementById(pre+'-date').value||todayStr();
+  var goalId=parseInt(document.getElementById(pre+'-goal').value)||null;
+  var goalName=goalId?(S.goals.find(function(g){return g.id===goalId;})||{}).name||'':'';
+  var note=document.getElementById(pre+'-note').value.trim()||goalName||(type==='savings'?'Savings deposit':'Investment');
+  var amount=parseFloat(document.getElementById(pre+'-amt').value)||0;
   if(amount<=0){document.getElementById(pre+'-amt').focus();return;}
-  S.logs[type].push({date,note,amount,goalId});
-  S.logs[type].sort((a,b)=>a.date.localeCompare(b.date));
+  S.logs[type].push({date:date,note:note,amount:amount,goalId:goalId});
+  S.logs[type].sort(function(a,b){return a.date.localeCompare(b.date);});
   document.getElementById(pre+'-amt').value='';document.getElementById(pre+'-note').value='';
   renderLogs();save();
 }
-function delLog(type,i){S.logs[type].splice(i,1);renderLogs();save();}
 function renderLogEntries(type,cid){
-  const el=document.getElementById(cid);el.innerHTML='';
-  const log=S.logs[type];
+  var el=document.getElementById(cid);el.innerHTML='';
+  var log=S.logs[type];
   if(!log.length){el.innerHTML='<div class="log-empty">No entries yet</div>';return;}
-  let run=0;
-  log.forEach((entry,i)=>{
+  var run=0;
+  log.forEach(function(entry,i){
     run+=entry.amount;
-    const row=document.createElement('div');row.className='log-entry';
-    const di=document.createElement('input');di.type='month';di.className='lce lce-date';di.value=entry.date;
-    di.addEventListener('blur',e=>{log[i].date=e.target.value||entry.date;S.logs[type].sort((a,b)=>a.date.localeCompare(b.date));renderLogs();save();});
-    const ni=document.createElement('input');ni.type='text';ni.className='lce lce-note';ni.value=entry.note;ni.placeholder='Note';
-    ni.addEventListener('blur',e=>{log[i].note=e.target.value;save();});
-    const ai=document.createElement('input');ai.type='number';ai.className='lce lce-amt';ai.value=entry.amount;ai.min='0';
-    const ca=e=>{const v=parseFloat(e.target.value)||0;if(v<=0){e.target.value=entry.amount;return;}log[i].amount=v;renderLogs();save();};
-    ai.addEventListener('blur',ca);ai.addEventListener('keydown',e=>{if(e.key==='Enter'){ca(e);ai.blur();}});
-    const rv=document.createElement('span');rv.className='lce-run';rv.textContent=fmt(run);
-    const dl=document.createElement('button');dl.className='lce-del';dl.textContent='×';dl.addEventListener('click',()=>delLog(type,i));
+    var row=document.createElement('div');row.className='log-entry';
+    var di=document.createElement('input');di.type='date';di.className='lce lce-date';di.value=entry.date;
+    di.addEventListener('change',function(e){log[i].date=e.target.value||entry.date;S.logs[type].sort(function(a,b){return a.date.localeCompare(b.date);});renderLogs();save();});
+    var ni=document.createElement('input');ni.type='text';ni.className='lce lce-note';ni.value=entry.note;ni.placeholder='Note';
+    ni.addEventListener('blur',function(e){log[i].note=e.target.value;save();});
+    var ai=document.createElement('input');ai.type='number';ai.className='lce lce-amt';ai.value=entry.amount;ai.min='0';
+    var ca=function(e){var v=parseFloat(e.target.value)||0;if(v<=0){e.target.value=entry.amount;return;}log[i].amount=v;renderLogs();save();};
+    ai.addEventListener('blur',ca);ai.addEventListener('keydown',function(e){if(e.key==='Enter'){ca(e);ai.blur();}});
+    var rv=document.createElement('span');rv.className='lce-run';rv.textContent=fmt(run);
+    var dl=document.createElement('button');dl.className='lce-del';dl.textContent='\u00d7';
+    dl.addEventListener('click',function(){S.logs[type].splice(i,1);renderLogs();save();});
     row.append(di,ni,ai,rv,dl);el.appendChild(row);
   });
 }
 function renderStrips(type,cid){
-  const el=document.getElementById(cid);
-  const tg=S.goals.filter(g=>g.type===type);
-  if(!tg.length){el.innerHTML='<div class="no-goals-msg" style="font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--text3);padding-top:9px;">Create a goal in the Goals tab — it will appear here for tracking.</div>';return;}
-  el.innerHTML=tg.map(g=>{
-    const contrib=S.logs[type].filter(e=>e.goalId===g.id).reduce((s,e)=>s+e.amount,0);
-    const target=type==='savings'?(g.target||0):(g.initial||0);
-    const pct=target>0?Math.min((contrib/target)*100,100):0;
-    return`<div><div class="gstrip-head"><span class="gstrip-name">${g.name}</span><span class="gstrip-val">${fmt(contrib)}${target>0?' of '+fmt(target):''}</span></div><div class="gstrip-bar"><div class="gstrip-fill" style="width:${pct}%"></div></div><div class="gstrip-pct">${target>0?pct.toFixed(1)+'% complete'+(pct>=100?' 🎉':''):'—'}</div></div>`;
-  }).join('');
+  var el=document.getElementById(cid);
+  var tg=S.goals.filter(function(g){return g.type===type;});
+  if(!tg.length){el.innerHTML='<div style="font-size:.63rem;color:var(--text3);padding-top:9px;">Create a goal in the Goals tab to track progress here.</div>';return;}
+  el.innerHTML='';
+  tg.forEach(function(g){
+    var contrib=getLogTotal(g.id,type);
+    var target=g.target||0;
+    var pct=target>0?Math.min((contrib/target)*100,100):0;
+    var d=document.createElement('div');
+    d.innerHTML='<div class="gstrip-head"><span class="gstrip-name">'+g.name+'</span><span class="gstrip-val">'+fmt(contrib)+(target>0?' of '+fmt(target):'')+'</span></div><div class="gstrip-bar"><div class="gstrip-fill" style="width:'+pct+'%"></div></div><div class="gstrip-pct">'+(target>0?pct.toFixed(1)+'% complete':'--')+'</div>';
+    el.appendChild(d);
+  });
 }
 function renderLogs(){
   syncDropdowns();
-  const st=S.logs.savings.reduce((s,e)=>s+e.amount,0);
+  var st=S.logs.savings.reduce(function(s,e){return s+e.amount;},0);
   document.getElementById('sav-total').textContent=fmt(st);
-  document.getElementById('sav-count').textContent=`${S.logs.savings.length} entr${S.logs.savings.length===1?'y':'ies'}`;
+  document.getElementById('sav-count').textContent=S.logs.savings.length+' entr'+(S.logs.savings.length===1?'y':'ies');
   renderLogEntries('savings','sav-entries');renderStrips('savings','sav-strips');
-  const it=S.logs.invest.reduce((s,e)=>s+e.amount,0);
+  var it=S.logs.invest.reduce(function(s,e){return s+e.amount;},0);
   document.getElementById('inv-total').textContent=fmt(it);
-  document.getElementById('inv-count').textContent=`${S.logs.invest.length} entr${S.logs.invest.length===1?'y':'ies'}`;
+  document.getElementById('inv-count').textContent=S.logs.invest.length+' entr'+(S.logs.invest.length===1?'y':'ies');
   renderLogEntries('invest','inv-entries');renderStrips('invest','inv-strips');
 }
-document.getElementById('sl-add').addEventListener('click',()=>addLogEntry('savings'));
-document.getElementById('il-add').addEventListener('click',()=>addLogEntry('invest'));
-document.getElementById('sl-amt').addEventListener('keydown',e=>{if(e.key==='Enter')addLogEntry('savings');});
-document.getElementById('il-amt').addEventListener('keydown',e=>{if(e.key==='Enter')addLogEntry('invest');});
+document.getElementById('sl-add').addEventListener('click',function(){addLogEntry('savings');});
+document.getElementById('il-add').addEventListener('click',function(){addLogEntry('invest');});
 
-// Net Worth
-function addNwItem(type){S.networth[type].push({name:'',amount:0});renderNW();save();const ins=document.getElementById(`nw-${type}-list`).querySelectorAll('.nw-item-name');if(ins.length)ins[ins.length-1].focus();}
-function delNw(type,i){S.networth[type].splice(i,1);renderNW();save();}
-
-function getNwForMonth(year, month) {
-  // Only count months with REAL recorded data — no fabricated budget fills
-  const cutoff = `${year}-${String(month).padStart(2,'0')}`;
-  let cumulSavings = 0;
-  Object.entries(S.monthlyActual).forEach(([k,d]) => {
-    if(k <= cutoff && d && (d.savings||0) > 0) cumulSavings += d.savings;
-  });
-  // Also add savings log entries up to this month
-  const logSavings = S.logs.savings.filter(e=>e.date<=cutoff).reduce((s,e)=>s+e.amount,0);
-  const logInvest = S.logs.invest.filter(e=>e.date<=cutoff).reduce((s,e)=>s+e.amount,0);
-  const manualAssets = S.networth.assets.reduce((s,i)=>s+(i.amount||0),0);
-  const liabilities = S.networth.liabilities.reduce((s,i)=>s+(i.amount||0),0);
-  return cumulSavings + logSavings + logInvest + manualAssets - liabilities;
-}
-
-function renderNWYearTracker() {
-  const sel = document.getElementById('nw-yr-sel');
-  if (!sel) return;
-  if (!sel.options.length) {
-    const now = new Date();
-    for (let y = now.getFullYear()-1; y <= now.getFullYear()+1; y++) {
-      const o = document.createElement('option'); o.value = y; o.textContent = y;
-      if (y === now.getFullYear()) o.selected = true; sel.appendChild(o);
-    }
-    sel.addEventListener('change', renderNWYearTracker);
-  }
-  const year = parseInt(sel.value);
-  const now = new Date();
-  const monthVals = [];
-  for (let m = 1; m <= 12; m++) {
-    const key = `${year}-${String(m).padStart(2,'0')}`;
-    const isPast = year < now.getFullYear() || (year === now.getFullYear() && m <= now.getMonth()+1);
-    // Only show NW for month if user has actually saved data for it (or has log entries up to it)
-    const hasActual = S.monthlyActual[key] && !isBlankMonthData(S.monthlyActual[key]);
-    const hasLog = S.logs.savings.some(e=>e.date<=key) || S.logs.invest.some(e=>e.date<=key);
-    const hasAny = hasActual || hasLog;
-    const val = (isPast && hasAny) ? getNwForMonth(year, m) : null;
-    monthVals.push({ m, key, val, isPast });
-  }
-
-  const validVals = monthVals.filter(x=>x.val!==null).map(x=>x.val);
-  const maxAbs = Math.max(Math.abs(Math.min(...validVals, 0)), Math.abs(Math.max(...validVals, 0)), 1);
-
-  // Mini month cells
-  const grid = document.getElementById('nw-year-grid');
-  if (grid) {
-    grid.innerHTML = '';
-    monthVals.forEach(({m, val, isPast}) => {
-      const cell = document.createElement('div');
-      cell.style.cssText = `border:1px solid var(--border);border-radius:9px;padding:10px 12px;background:var(--surface2);`;
-      const isPos = val > 0, isNeg = val < 0;
-      const color = !isPast ? 'var(--text3)' : isPos ? 'var(--good)' : isNeg ? 'var(--warn)' : 'var(--text3)';
-      cell.innerHTML = `<div style="font-family:'JetBrains Mono',monospace;font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:5px;">${MONTHS[m-1]}</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:500;color:${color};">${val !== null ? fmt(val) : '—'}</div>`;
-      grid.appendChild(cell);
-    });
-  }
-
-  // Bar chart
-  const barWrap = document.getElementById('nw-year-bar');
-  const barLabels = document.getElementById('nw-bar-labels');
-  if (barWrap) {
-    barWrap.innerHTML = '';
-    if (barLabels) barLabels.innerHTML = '';
-    monthVals.forEach(({m, val}) => {
-      const bar = document.createElement('div');
-      bar.style.cssText = `flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;`;
-      if (val === null) {
-        bar.innerHTML = `<div style="width:100%;height:3px;background:var(--border);border-radius:2px;opacity:.3;"></div>`;
-      } else {
-        const pct = Math.min(Math.abs(val)/maxAbs*100, 100);
-        const isPos = val >= 0;
-        bar.innerHTML = `<div title="${fmt(val)}" style="width:100%;height:${Math.max(pct*0.9,3)}%;background:${isPos?'linear-gradient(to top,var(--savings),var(--good))':'linear-gradient(to top,var(--warn),#f87171)'};border-radius:3px 3px 0 0;transition:height .4s ease;cursor:default;"></div>`;
-      }
-      barWrap.appendChild(bar);
-      if (barLabels) {
-        const lbl = document.createElement('div');
-        lbl.style.cssText = `font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--text3);text-align:center;flex:1;`;
-        lbl.textContent = MONTHS[m-1].slice(0,1);
-        barLabels.appendChild(lbl);
-      }
-    });
-  }
-}
-
+// ── NET WORTH ──
+function addNwItem(type){S.networth[type].push({name:'',amount:0});renderNW();save();}
 function renderNW(){
-  // Savings = budget savings allocation (current month) + savings log entries
-  const totalSaved = bucketTotal('savings') + S.logs.savings.reduce((s,e)=>s+e.amount,0);
-  // Investments = cumulative from invest log
-  const totalInvested=S.logs.invest.reduce((s,e)=>s+e.amount,0);
-  const autoAssets=[
-    {name:'Savings (budget + log)',amount:totalSaved,auto:true},
-    {name:'Total Investments (from log)',amount:totalInvested,auto:true}
-  ];
-  const manualAssetTotal=S.networth.assets.reduce((s,i)=>s+(i.amount||0),0);
-  const ta=totalSaved+totalInvested+manualAssetTotal;
-  const tl=S.networth.liabilities.reduce((s,i)=>s+(i.amount||0),0);
-  const nw=ta-tl;
-  const el=document.getElementById('nw-total');el.textContent=fmt(nw);el.className='nw-total '+(nw>0?'pos':nw<0?'neg':'zero');
-  document.getElementById('nw-sub').textContent=nw>0?`${fmt(ta)} assets − ${fmt(tl)} liabilities`:nw<0?`You owe ${fmt(Math.abs(nw))} more than you own`:'Add liabilities below — savings & investments pull in automatically';
-  document.getElementById('nw-assets-total').textContent=fmt(ta);
-  document.getElementById('nw-liab-total').textContent=fmt(tl);
-
-  // Render assets
-  const alist=document.getElementById('nw-assets-list');alist.innerHTML='';
-  // Auto rows (read-only)
-  autoAssets.forEach(item=>{
-    const row=document.createElement('div');row.className='nw-item';
-    row.innerHTML=`
-      <div style="flex:1;display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:5px;background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.15);">
-        <span style="font-size:.62rem;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--savings);flex-shrink:0;">AUTO</span>
-        <span style="flex:1;font-size:.7rem;font-family:'Outfit',sans-serif;color:var(--text2);">${item.name}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:500;color:var(--savings);">${fmt(item.amount)}</span>
-      </div>`;
+  var savT=0;
+  Object.keys(S.months).forEach(function(k){
+    var m=S.months[k];
+    if(m&&m.budget&&m.budget.savings) savT+=m.budget.savings.reduce(function(s,i){return s+(i.amount||0);},0);
+  });
+  var invT=S.logs.invest.reduce(function(s,e){return s+e.amount;},0);
+  var manA=S.networth.assets.reduce(function(s,i){return s+(i.amount||0);},0);
+  var ta=savT+invT+manA;
+  var tl=S.networth.liabilities.reduce(function(s,i){return s+(i.amount||0);},0);
+  var nw=ta-tl;
+  var el=document.getElementById('nw-total');el.textContent=fmt(nw);el.className='nw-total '+(nw>0?'pos':nw<0?'neg':'zero');
+  document.getElementById('nw-sub').textContent=nw>0?fmt(ta)+' assets - '+fmt(tl)+' liabilities':nw<0?'You owe '+fmt(Math.abs(nw))+' more than you own':'Add your assets and liabilities';
+  document.getElementById('nw-a-total').textContent=fmt(ta);
+  document.getElementById('nw-l-total').textContent=fmt(tl);
+  // Auto rows
+  var alist=document.getElementById('nw-a-list');alist.innerHTML='';
+  [{name:'Savings (all months)',amount:savT},{name:'Investments (from log)',amount:invT}].forEach(function(item){
+    var row=document.createElement('div');row.className='nw-item';
+    row.innerHTML='<div style="flex:1;display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:5px;background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.15);"><span style="font-size:.6rem;letter-spacing:.06em;color:var(--savings);">AUTO</span><span style="flex:1;font-size:.7rem;color:var(--text2);">'+item.name+'</span><span style="font-size:.72rem;font-weight:500;color:var(--savings);">'+fmt(item.amount)+'</span></div>';
     alist.appendChild(row);
   });
-  // Manual rows
-  S.networth.assets.forEach((item,i)=>{
-    const row=document.createElement('div');row.className='nw-item';
-    const n=document.createElement('input');n.type='text';n.className='nw-item-name';n.value=item.name;n.placeholder='e.g. Property, Vehicle...';
-    n.addEventListener('blur',e=>{S.networth.assets[i].name=e.target.value;save();});
-    const a=document.createElement('input');a.type='number';a.className='nw-item-amt';a.value=item.amount||'';a.placeholder='0';a.min='0';
-    const c=e=>{S.networth.assets[i].amount=parseFloat(e.target.value)||0;renderNW();save();};
-    a.addEventListener('blur',c);a.addEventListener('keydown',e=>{if(e.key==='Enter'){c(e);a.blur();}});
-    const d=document.createElement('button');d.className='nw-item-del';d.textContent='×';d.addEventListener('click',()=>delNw('assets',i));
+  S.networth.assets.forEach(function(item,i){
+    var row=document.createElement('div');row.className='nw-item';
+    var n=document.createElement('input');n.type='text';n.className='nw-item-name';n.value=item.name;n.placeholder='e.g. Property';
+    n.addEventListener('blur',function(e){S.networth.assets[i].name=e.target.value;save();});
+    var a=document.createElement('input');a.type='number';a.className='nw-item-amt';a.value=item.amount||'';a.placeholder='0';
+    var c=function(e){S.networth.assets[i].amount=parseFloat(e.target.value)||0;renderNW();save();};
+    a.addEventListener('blur',c);a.addEventListener('keydown',function(e){if(e.key==='Enter'){c(e);a.blur();}});
+    var d=document.createElement('button');d.className='nw-item-del';d.textContent='\u00d7';
+    d.addEventListener('click',function(){S.networth.assets.splice(i,1);renderNW();save();});
     row.append(n,a,d);alist.appendChild(row);
   });
-
-  // Render liabilities (fully editable, starts empty)
-  const llist=document.getElementById('nw-liab-list');llist.innerHTML='';
-  if(!S.networth.liabilities.length){
-    llist.innerHTML=`<div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);padding:10px 4px;letter-spacing:.06em;">No liabilities added yet</div>`;
-  }
-  S.networth.liabilities.forEach((item,i)=>{
-    const row=document.createElement('div');row.className='nw-item';
-    const n=document.createElement('input');n.type='text';n.className='nw-item-name';n.value=item.name;n.placeholder='e.g. Student Loan, Credit Card...';
-    n.addEventListener('blur',e=>{S.networth.liabilities[i].name=e.target.value;save();});
-    const a=document.createElement('input');a.type='number';a.className='nw-item-amt';a.value=item.amount||'';a.placeholder='0';a.min='0';
-    const c=e=>{S.networth.liabilities[i].amount=parseFloat(e.target.value)||0;renderNW();save();};
-    a.addEventListener('blur',c);a.addEventListener('keydown',e=>{if(e.key==='Enter'){c(e);a.blur();}});
-    const d=document.createElement('button');d.className='nw-item-del';d.textContent='×';d.addEventListener('click',()=>delNw('liabilities',i));
+  var llist=document.getElementById('nw-l-list');llist.innerHTML='';
+  if(!S.networth.liabilities.length) llist.innerHTML='<div style="font-size:.62rem;color:var(--text3);padding:10px 4px;">No liabilities added yet</div>';
+  S.networth.liabilities.forEach(function(item,i){
+    var row=document.createElement('div');row.className='nw-item';
+    var n=document.createElement('input');n.type='text';n.className='nw-item-name';n.value=item.name;n.placeholder='e.g. Student Loan';
+    n.addEventListener('blur',function(e){S.networth.liabilities[i].name=e.target.value;save();});
+    var a=document.createElement('input');a.type='number';a.className='nw-item-amt';a.value=item.amount||'';a.placeholder='0';
+    var c=function(e){S.networth.liabilities[i].amount=parseFloat(e.target.value)||0;renderNW();save();};
+    a.addEventListener('blur',c);a.addEventListener('keydown',function(e){if(e.key==='Enter'){c(e);a.blur();}});
+    var d=document.createElement('button');d.className='nw-item-del';d.textContent='\u00d7';
+    d.addEventListener('click',function(){S.networth.liabilities.splice(i,1);renderNW();save();});
     row.append(n,a,d);llist.appendChild(row);
   });
-
-  renderNWYearTracker();
 }
 
-// Goals
+// ── GOALS ──
 function addGoal(){
-  const name=document.getElementById('new-goal-name').value.trim()||'My Goal';
-  const type=document.getElementById('new-goal-type').value;
-  S.goals.push({id:S.nextGoalId++,name,type,target:0,current:0,date:'',initial:0,monthly:300,rate:7,years:10});
+  var name=document.getElementById('new-goal-name').value.trim()||'My Goal';
+  var type=document.getElementById('new-goal-type').value;
+  S.goals.push({id:S.nextGoalId++,name:name,type:type,target:0,date:''});
   document.getElementById('new-goal-name').value='';
-  renderGoals();syncDropdowns();renderStrips('savings','sav-strips');renderStrips('invest','inv-strips');save();
+  renderGoals();syncDropdowns();save();
 }
-function deleteGoal(id){const i=S.goals.findIndex(g=>g.id===id);if(i>-1){S.goals.splice(i,1);renderGoals();syncDropdowns();save();}}
+function deleteGoal(id){
+  var i=S.goals.findIndex(function(g){return g.id===id;});
+  if(i>-1){S.goals.splice(i,1);renderGoals();syncDropdowns();save();}
+}
 function updateGoalField(id,field,val){
-  const g=S.goals.find(g=>g.id===id);if(!g)return;
+  var g=S.goals.find(function(g){return g.id===id;});if(!g)return;
   g[field]=field==='date'?val:(parseFloat(val)||0);
-  const el=document.getElementById(`gcr-${id}`);if(el)el.innerHTML=g.type==='savings'?savRes(g):invRes(g);save();
+  var el=document.getElementById('gcr-'+id);
+  if(el)el.innerHTML=g.type==='savings'?savRes(g):invRes(g);
+  save();
 }
 function savRes(g){
-  const target=g.target||0,current=g.current||0,remaining=Math.max(target-current,0);
-  const pct=target>0?Math.min((current/target)*100,100):0;
-  let mL=null,needed=null;
-  if(g.date){const[y,m]=g.date.split('-').map(Number),now=new Date();mL=Math.max((y-now.getFullYear())*12+(m-now.getMonth()),1);needed=remaining/mL;}
-  const inc=getIncome(),ca=needed!=null&&needed<=inc*.2;
-  return`<div class="gs-row"><span class="gs-lbl">Progress</span><span class="gs-val shi">${pct.toFixed(0)}%</span></div>
-<div class="gs-bar-bg"><div class="gs-bar-fill" style="width:${pct}%"></div></div>
-<div class="gs-row"><span class="gs-lbl">Target</span><span class="gs-val">${fmt(target)}</span></div>
-<div class="gs-row"><span class="gs-lbl">Saved so far</span><span class="gs-val">${fmt(current)}</span></div>
-<div class="gs-row"><span class="gs-lbl">Still needed</span><span class="gs-val">${fmt(remaining)}</span></div>
-${mL!=null?`<div class="gs-row"><span class="gs-lbl">Months left</span><span class="gs-val">${mL} mo</span></div><div class="gs-row"><span class="gs-lbl">Monthly needed</span><span class="gs-val ${ca?'shi':'wrn'}">${fmt(needed)}/mo</span></div>`:`<div style="font-size:.6rem;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:4px;">Set a target date to see monthly contribution needed.</div>`}`;
+  var target=g.target||0,current=getLogTotal(g.id,'savings'),remaining=Math.max(target-current,0);
+  var pct=target>0?Math.min((current/target)*100,100):0;
+  var mL=null,needed=null;
+  if(g.date){var parts=g.date.split('-').map(Number),now=new Date();mL=Math.max((parts[0]-now.getFullYear())*12+(parts[1]-now.getMonth()),1);needed=remaining/mL;}
+  var h='<div class="gs-row"><span class="gs-lbl">Progress</span><span class="gs-val shi">'+pct.toFixed(0)+'%</span></div>';
+  h+='<div class="gs-bar-bg"><div class="gs-bar-fill" style="width:'+pct+'%"></div></div>';
+  h+='<div class="gs-row"><span class="gs-lbl">Target</span><span class="gs-val">'+fmt(target)+'</span></div>';
+  h+='<div class="gs-row"><span class="gs-lbl">Saved so far</span><span class="gs-val shi">'+fmt(current)+'</span></div>';
+  h+='<div class="gs-row"><span class="gs-lbl">Still needed</span><span class="gs-val">'+fmt(remaining)+'</span></div>';
+  if(mL!=null){
+    h+='<div class="gs-row"><span class="gs-lbl">Months left</span><span class="gs-val">'+mL+' mo</span></div>';
+    h+='<div class="gs-row"><span class="gs-lbl">Monthly needed</span><span class="gs-val '+(needed<=getIncome()*.2?'shi':'wrn')+'">'+fmt(needed)+'/mo</span></div>';
+  }else{
+    h+='<div style="font-size:.6rem;color:var(--text3);margin-top:4px;">Set a target date to see monthly contribution needed.</div>';
+  }
+  return h;
 }
 function invRes(g){
-  const target=g.target||0;
-  const current=getLogTotal(g.id,'invest'); // Pull from invest log
-  const remaining=Math.max(target-current,0);
-  const pct=target>0?Math.min((current/target)*100,100):0;
-  let mL=null,needed=null;
-  if(g.date){const[gy,gm]=g.date.split('-').map(Number),now=new Date();mL=Math.max((gy-now.getFullYear())*12+(gm-now.getMonth()),1);needed=remaining/mL;}
-  const inc=getIncome(),ca=needed!=null&&needed<=inc*.2;
-  return`<div class="gs-row"><span class="gs-lbl">Progress</span><span class="gs-val ihi">${pct.toFixed(0)}%</span></div>
-<div class="gs-bar-bg"><div class="gs-bar-fill" style="width:${pct}%"></div></div>
-<div class="gs-row"><span class="gs-lbl">Target</span><span class="gs-val">${fmt(target)}</span></div>
-<div class="gs-row"><span class="gs-lbl">Invested so far</span><span class="gs-val ihi">${fmt(current)}</span></div>
-<div class="gs-row"><span class="gs-lbl">Still needed</span><span class="gs-val">${fmt(remaining)}</span></div>
-${mL!=null?`<div class="gs-row"><span class="gs-lbl">Months left</span><span class="gs-val">${mL} mo</span></div><div class="gs-row"><span class="gs-lbl">Monthly needed</span><span class="gs-val ${ca?'ihi':'wrn'}">${fmt(needed)}/mo</span></div>`:`<div style="font-size:.6rem;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:4px;">Set a target date to see monthly contribution needed.</div>`}`;
+  var target=g.target||0,current=getLogTotal(g.id,'invest'),remaining=Math.max(target-current,0);
+  var pct=target>0?Math.min((current/target)*100,100):0;
+  var mL=null,needed=null;
+  if(g.date){var parts=g.date.split('-').map(Number),now=new Date();mL=Math.max((parts[0]-now.getFullYear())*12+(parts[1]-now.getMonth()),1);needed=remaining/mL;}
+  var h='<div class="gs-row"><span class="gs-lbl">Progress</span><span class="gs-val ihi">'+pct.toFixed(0)+'%</span></div>';
+  h+='<div class="gs-bar-bg"><div class="gs-bar-fill" style="width:'+pct+'%"></div></div>';
+  h+='<div class="gs-row"><span class="gs-lbl">Target</span><span class="gs-val">'+fmt(target)+'</span></div>';
+  h+='<div class="gs-row"><span class="gs-lbl">Invested so far</span><span class="gs-val ihi">'+fmt(current)+'</span></div>';
+  h+='<div class="gs-row"><span class="gs-lbl">Still needed</span><span class="gs-val">'+fmt(remaining)+'</span></div>';
+  if(mL!=null){
+    h+='<div class="gs-row"><span class="gs-lbl">Months left</span><span class="gs-val">'+mL+' mo</span></div>';
+    h+='<div class="gs-row"><span class="gs-lbl">Monthly needed</span><span class="gs-val '+(needed<=getIncome()*.2?'ihi':'wrn')+'">'+fmt(needed)+'/mo</span></div>';
+  }else{
+    h+='<div style="font-size:.6rem;color:var(--text3);margin-top:4px;">Set a target date to see monthly contribution needed.</div>';
+  }
+  return h;
 }
 function renderGoals(){
-  const list=document.getElementById('goals-list');
-  if(!S.goals.length){list.innerHTML='<div class="goals-empty">No goals yet — add one above</div>';return;}
+  var list=document.getElementById('goals-list');
+  if(!list)return;
+  if(!S.goals.length){list.innerHTML='<div class="goals-empty">No goals yet -- add one above</div>';return;}
   list.innerHTML='';
-  S.goals.forEach(g=>{
-    const isSav=g.type==='savings';
-    // Goal fields - progress auto-computed from log entries linked to this goal
-    const loggedSoFar = g.type==='savings' ? getLogTotal(g.id,'savings') : getLogTotal(g.id,'invest');
-    const fields=`
-<div class="gc-field"><label class="lbl">Target Amount</label><input type="number" class="inp" value="${g.target||''}" placeholder="${isSav?'10000':'50000'}" min="0" onblur="updateGoalField(${g.id},'target',this.value)" onkeydown="if(event.key==='Enter'){updateGoalField(${g.id},'target',this.value);this.blur();}"></div>
-<div class="gc-field"><label class="lbl">Target Date</label><input type="month" class="inp" value="${g.date}" onchange="updateGoalField(${g.id},'date',this.value)"></div>
-<div style="padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:var(--rs);font-family:'JetBrains Mono',monospace;font-size:.68rem;">
-  <div style="color:var(--text3);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">${isSav?'Saved so far (from log)':'Invested so far (from log)'}</div>
-  <div style="color:${isSav?'var(--savings)':'var(--invest)'};font-size:1.1rem;font-weight:500;">${fmt(loggedSoFar)}</div>
-  <div style="color:var(--text3);font-size:.58rem;margin-top:2px;">Log deposits in the Savings Log tab</div>
-</div>
-`;
-    const card=document.createElement('div');card.className=`goal-card ${isSav?'sav-type':'inv-type'}`;
-    card.innerHTML=`<div class="gc-head"><div class="gc-title-wrap"><span class="gc-title">${g.name}</span><span class="gc-badge">${isSav?'Savings':'Investment'}</span></div><button class="gc-del" onclick="deleteGoal(${g.id})">✕ Remove</button></div><div class="gc-body"><div class="gc-fields">${fields}</div><div class="gc-result" id="gcr-${g.id}">${isSav?savRes(g):invRes(g)}</div></div>`;
+  S.goals.forEach(function(g){
+    var isSav=g.type==='savings';
+    var card=document.createElement('div');
+    card.className='goal-card '+(isSav?'sav-type':'inv-type');
+    var head=document.createElement('div');head.className='gc-head';
+    var tw=document.createElement('div');tw.className='gc-title-wrap';
+    var ti=document.createElement('span');ti.className='gc-title';ti.textContent=g.name;
+    var ba=document.createElement('span');ba.className='gc-badge';ba.textContent=isSav?'Savings':'Investment';
+    tw.append(ti,ba);
+    var db=document.createElement('button');db.className='gc-del';db.textContent='\u2715 Remove';
+    db.addEventListener('click',function(){deleteGoal(g.id);});
+    head.append(tw,db);
+    var body=document.createElement('div');body.className='gc-body';
+    var fields=document.createElement('div');fields.className='gc-fields';
+    // Target
+    var f1=document.createElement('div');f1.className='gc-field';
+    var l1=document.createElement('label');l1.className='lbl';l1.textContent='Target Amount';
+    var i1=document.createElement('input');i1.type='number';i1.className='inp';i1.value=g.target||'';i1.placeholder=isSav?'10000':'50000';i1.min='0';
+    i1.addEventListener('blur',function(){updateGoalField(g.id,'target',i1.value);});
+    i1.addEventListener('keydown',function(e){if(e.key==='Enter'){updateGoalField(g.id,'target',i1.value);i1.blur();}});
+    f1.append(l1,i1);
+    // Date
+    var f2=document.createElement('div');f2.className='gc-field';
+    var l2=document.createElement('label');l2.className='lbl';l2.textContent='Target Date';
+    var i2=document.createElement('input');i2.type='month';i2.className='inp';i2.value=g.date||'';
+    i2.addEventListener('change',function(){updateGoalField(g.id,'date',i2.value);});
+    f2.append(l2,i2);
+    fields.append(f1,f2);
+    // Result
+    var result=document.createElement('div');result.className='gc-result';result.id='gcr-'+g.id;
+    result.innerHTML=isSav?savRes(g):invRes(g);
+    body.append(fields,result);
+    card.append(head,body);
     list.appendChild(card);
   });
 }
 document.getElementById('add-goal-btn').addEventListener('click',addGoal);
-document.getElementById('new-goal-name').addEventListener('keydown',e=>{if(e.key==='Enter')addGoal();});
+document.getElementById('new-goal-name').addEventListener('keydown',function(e){if(e.key==='Enter')addGoal();});
 
-// Init
-load();
-document.getElementById('income-inp').value=S.income||0;
-document.getElementById('split-needs').value=S.split.needs||50;
-document.getElementById('split-wants').value=S.split.wants||30;
-document.getElementById('split-savings').value=S.split.savings||20;
-if(S.currency){const sel=document.getElementById('currency-sel');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===S.currency){sel.selectedIndex=i;break;}}document.getElementById('dollar-sign').textContent=S.currency;}
-// Clean up any bad zero-saves from previous sessions
-Object.keys(S.monthlyActual).forEach(k=>{
-  const d=S.monthlyActual[k];
-  if(d&&(d.needs||0)===0&&(d.wants||0)===0&&(d.savings||0)===0) delete S.monthlyActual[k];
-});
-document.getElementById('sl-date').value=nowStr();
-document.getElementById('il-date').value=nowStr();
-const sv=S.split;document.getElementById('split-tag').textContent=sv.needs===50&&sv.wants===30&&sv.savings===20?'50 / 30 / 20 Rule':`${sv.needs} / ${sv.wants} / ${sv.savings} Rule`;
-['needs','wants','savings'].forEach(b=>renderBucketItems(b));
-recalc();renderGoals();renderLogs();renderNW();
+// ── PDF EXPORT ──
+function exportPDF(){
+  var now=new Date();
+  var year=now.getFullYear();
+  var sp=getSplit();
 
-// New month banner logic
-// Set current month badge in budget header
-function setMonthBadge(){
-  const now=new Date();
-  const badge=document.getElementById('current-month-badge');
-  if(badge) badge.textContent=MONTHS[now.getMonth()]+' '+now.getFullYear();
-}
-setMonthBadge();
-
-function checkNewMonthBanner(){
-  const key=nowStr();
-  const hasData=S.monthlyActual[key]&&!isBlankMonthData(S.monthlyActual[key]);
-  const banner=document.getElementById('new-month-banner');
-  if(banner){
-    const now=new Date();
-    const monthName=MONTHS[now.getMonth()]+' '+now.getFullYear();
-    const msg=document.getElementById('new-month-msg');
-    if(msg) msg.textContent=`It's ${monthName} — review and update your income and budget allocations.`;
-    banner.style.display=hasData?'none':'flex';
+  // Build monthly summary data
+  var monthRows='';
+  var yearIncome=0,yearNeeds=0,yearWants=0,yearSavings=0;
+  for(var mi=1;mi<=12;mi++){
+    var key=year+'-'+String(mi).padStart(2,'0');
+    var md=S.months[key];
+    if(!md){monthRows+='<tr><td>'+MONTHS[mi-1]+'</td><td colspan="5" style="color:#888;text-align:center;">No data</td></tr>';continue;}
+    var inc=md.income||0;
+    var n=md.budget.needs?md.budget.needs.reduce(function(s,i){return s+(i.amount||0);},0):0;
+    var w=md.budget.wants?md.budget.wants.reduce(function(s,i){return s+(i.amount||0);},0):0;
+    var sv=md.budget.savings?md.budget.savings.reduce(function(s,i){return s+(i.amount||0);},0):0;
+    var rem=inc-n-w-sv;
+    yearIncome+=inc;yearNeeds+=n;yearWants+=w;yearSavings+=sv;
+    monthRows+='<tr><td>'+MONTHS[mi-1]+'</td><td>'+fmt(inc)+'</td><td>'+fmt(n)+'</td><td>'+fmt(w)+'</td><td>'+fmt(sv)+'</td><td style="color:'+(rem>=0?'#4ade80':'#f87171')+'">'+fmt(rem)+'</td></tr>';
   }
+
+  // Savings log entries
+  var savRows='';
+  S.logs.savings.forEach(function(e){
+    var gn=e.goalId?(S.goals.find(function(g){return g.id===e.goalId;})||{}).name||'--':'--';
+    savRows+='<tr><td>'+e.date+'</td><td>'+e.note+'</td><td>'+gn+'</td><td style="text-align:right">'+fmt(e.amount)+'</td></tr>';
+  });
+  var invRows='';
+  S.logs.invest.forEach(function(e){
+    var gn=e.goalId?(S.goals.find(function(g){return g.id===e.goalId;})||{}).name||'--':'--';
+    invRows+='<tr><td>'+e.date+'</td><td>'+e.note+'</td><td>'+gn+'</td><td style="text-align:right">'+fmt(e.amount)+'</td></tr>';
+  });
+  var totalSav=S.logs.savings.reduce(function(s,e){return s+e.amount;},0);
+  var totalInv=S.logs.invest.reduce(function(s,e){return s+e.amount;},0);
+
+  // Net worth
+  var cumulSav=0;
+  Object.keys(S.months).forEach(function(k){var m=S.months[k];if(m&&m.budget&&m.budget.savings)cumulSav+=m.budget.savings.reduce(function(s,i){return s+(i.amount||0);},0);});
+  var manA=S.networth.assets.reduce(function(s,i){return s+(i.amount||0);},0);
+  var tl=S.networth.liabilities.reduce(function(s,i){return s+(i.amount||0);},0);
+  var ta=cumulSav+totalInv+manA;
+  var nwVal=ta-tl;
+
+  // Goals
+  var goalRows='';
+  S.goals.forEach(function(g){
+    var curr=getLogTotal(g.id,g.type==='savings'?'savings':'invest');
+    var targ=g.target||0;
+    var pct=targ>0?Math.min((curr/targ)*100,100).toFixed(1):0;
+    goalRows+='<tr><td>'+g.name+'</td><td>'+(g.type==='savings'?'Savings':'Investment')+'</td><td>'+fmt(targ)+'</td><td>'+fmt(curr)+'</td><td>'+pct+'%</td></tr>';
+  });
+
+  // Build report HTML
+  var h='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fin - '+year+' Financial Report</title>';
+  h+='<style>';
+  h+='*{margin:0;padding:0;box-sizing:border-box;}';
+  h+='body{font-family:Helvetica,Arial,sans-serif;font-size:11px;color:#222;padding:40px;max-width:800px;margin:0 auto;line-height:1.5;}';
+  h+='h1{font-size:24px;font-weight:300;margin-bottom:4px;}';
+  h+='h2{font-size:14px;font-weight:600;margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid #222;text-transform:uppercase;letter-spacing:.1em;}';
+  h+='h3{font-size:12px;font-weight:600;margin:16px 0 6px;color:#555;}';
+  h+='.sub{font-size:10px;color:#888;margin-bottom:20px;}';
+  h+='table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:10px;}';
+  h+='th{text-align:left;padding:6px 8px;border-bottom:1.5px solid #333;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#555;}';
+  h+='td{padding:5px 8px;border-bottom:1px solid #eee;}';
+  h+='tr:last-child td{border-bottom:none;}';
+  h+='.totals td{font-weight:700;border-top:2px solid #333;border-bottom:none;}';
+  h+='.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}';
+  h+='.stat{padding:12px;border:1px solid #ddd;border-radius:6px;text-align:center;}';
+  h+='.stat-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:#888;margin-bottom:4px;}';
+  h+='.stat-val{font-size:18px;font-weight:600;}';
+  h+='.pos{color:#16a34a;}.neg{color:#dc2626;}';
+  h+='@media print{body{padding:20px;} @page{margin:15mm;}}';
+  h+='</style></head><body>';
+
+  // Header
+  h+='<h1>Financial Report — '+year+'</h1>';
+  h+='<div class="sub">Generated '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})+' | Currency: '+sym()+'</div>';
+
+  // Summary stats
+  h+='<div class="stat-grid">';
+  h+='<div class="stat"><div class="stat-lbl">Total Income</div><div class="stat-val">'+fmt(yearIncome)+'</div></div>';
+  h+='<div class="stat"><div class="stat-lbl">Total Spent</div><div class="stat-val">'+fmt(yearNeeds+yearWants)+'</div></div>';
+  h+='<div class="stat"><div class="stat-lbl">Total Saved</div><div class="stat-val pos">'+fmt(yearSavings)+'</div></div>';
+  h+='<div class="stat"><div class="stat-lbl">Net Worth</div><div class="stat-val '+(nwVal>=0?'pos':'neg')+'">'+fmt(nwVal)+'</div></div>';
+  h+='</div>';
+
+  // Monthly breakdown
+  h+='<h2>Monthly Breakdown</h2>';
+  h+='<table><thead><tr><th>Month</th><th>Income</th><th>Needs</th><th>Wants</th><th>Savings</th><th>Remaining</th></tr></thead><tbody>';
+  h+=monthRows;
+  var yearRem=yearIncome-yearNeeds-yearWants-yearSavings;
+  h+='<tr class="totals"><td>TOTAL</td><td>'+fmt(yearIncome)+'</td><td>'+fmt(yearNeeds)+'</td><td>'+fmt(yearWants)+'</td><td>'+fmt(yearSavings)+'</td><td>'+fmt(yearRem)+'</td></tr>';
+  h+='</tbody></table>';
+
+  // Savings log
+  if(S.logs.savings.length){
+    h+='<h2>Savings Log</h2>';
+    h+='<table><thead><tr><th>Date</th><th>Note</th><th>Goal</th><th style="text-align:right">Amount</th></tr></thead><tbody>';
+    h+=savRows;
+    h+='<tr class="totals"><td colspan="3">TOTAL SAVED</td><td style="text-align:right">'+fmt(totalSav)+'</td></tr>';
+    h+='</tbody></table>';
+  }
+
+  // Investment log
+  if(S.logs.invest.length){
+    h+='<h2>Investment Log</h2>';
+    h+='<table><thead><tr><th>Date</th><th>Note</th><th>Goal</th><th style="text-align:right">Amount</th></tr></thead><tbody>';
+    h+=invRows;
+    h+='<tr class="totals"><td colspan="3">TOTAL INVESTED</td><td style="text-align:right">'+fmt(totalInv)+'</td></tr>';
+    h+='</tbody></table>';
+  }
+
+  // Net worth
+  h+='<h2>Net Worth</h2>';
+  h+='<table><thead><tr><th>Category</th><th style="text-align:right">Amount</th></tr></thead><tbody>';
+  h+='<tr><td>Cumulative Savings</td><td style="text-align:right">'+fmt(cumulSav)+'</td></tr>';
+  h+='<tr><td>Investments (from log)</td><td style="text-align:right">'+fmt(totalInv)+'</td></tr>';
+  S.networth.assets.forEach(function(a){h+='<tr><td>'+a.name+'</td><td style="text-align:right">'+fmt(a.amount)+'</td></tr>';});
+  h+='<tr class="totals"><td>Total Assets</td><td style="text-align:right">'+fmt(ta)+'</td></tr>';
+  S.networth.liabilities.forEach(function(l){h+='<tr><td>'+l.name+'</td><td style="text-align:right;color:#dc2626">-'+fmt(l.amount)+'</td></tr>';});
+  h+='<tr class="totals"><td>NET WORTH</td><td style="text-align:right;color:'+(nwVal>=0?'#16a34a':'#dc2626')+'">'+fmt(nwVal)+'</td></tr>';
+  h+='</tbody></table>';
+
+  // Goals
+  if(S.goals.length){
+    h+='<h2>Financial Goals</h2>';
+    h+='<table><thead><tr><th>Goal</th><th>Type</th><th>Target</th><th>Progress</th><th>%</th></tr></thead><tbody>';
+    h+=goalRows;
+    h+='</tbody></table>';
+  }
+
+  h+='<div style="margin-top:30px;padding-top:12px;border-top:1px solid #ddd;font-size:9px;color:#aaa;text-align:center;">Generated by Fin — Personal Finance Dashboard</div>';
+  h+='</body></html>';
+
+  // Open in new window and trigger print
+  var win=window.open('','_blank');
+  win.document.write(h);
+  win.document.close();
+  setTimeout(function(){win.print();},500);
 }
-function goToMonthlyNow(){
-  // Go to Budget tab so user can log this month's income and expenses
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
-  document.querySelector('[data-tab="budget"]').classList.add('active');
-  document.getElementById('panel-budget').classList.add('active');
-  document.getElementById('new-month-banner').style.display='none';
-  // Scroll to income input
-  setTimeout(()=>document.getElementById('income-inp').focus(),100);
-}
-checkNewMonthBanner();
+
+// ── INIT ──
+load();
+curMonth=monthKey();
+// Restore UI
+document.getElementById('split-n').value=S.split.needs||50;
+document.getElementById('split-w').value=S.split.wants||30;
+document.getElementById('split-s').value=S.split.savings||20;
+if(S.currency){var sel=document.getElementById('currency-sel');for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===S.currency){sel.selectedIndex=i;break;}}document.getElementById('dollar-sign').textContent=S.currency;}
+var sv=S.split;document.getElementById('split-tag').textContent=sv.needs===50&&sv.wants===30&&sv.savings===20?'50 / 30 / 20 Rule':sv.needs+' / '+sv.wants+' / '+sv.savings+' Rule';
+document.getElementById('sl-date').value=todayStr();
+document.getElementById('il-date').value=todayStr();
+setMonth(curMonth);
+renderGoals();renderLogs();renderNW();
+
 </script>
 </body>
 </html>
