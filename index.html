@@ -453,7 +453,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 0
       <div class="sum-grid">
         <div><div class="sum-lbl">Income</div><div class="sum-val" id="sv-inc">$0</div><div class="sum-sub">per month</div></div>
         <div><div class="sum-lbl">Spent</div><div class="sum-val" id="sv-sp">$0</div><div class="sum-sub" id="sv-pct">0%</div></div>
-        <div><div class="sum-lbl">Remaining</div><div class="sum-val pos" id="sv-rem">$0</div><div class="sum-sub">unallocated</div></div>
+        <div><div class="sum-lbl">Remaining</div><div class="sum-val pos" id="sv-rem">$0</div><div class="sum-sub" id="sv-rem-sub">unallocated</div></div>
         <div><div class="sum-lbl">Annual Savings</div><div class="sum-val" id="sv-yr">$0</div><div class="sum-sub">projected</div></div>
       </div>
     </div>
@@ -484,9 +484,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 0
           <button class="btn" id="sl-add">+ Add</button>
         </div>
       </div>
-      <div class="log-tbl-head"><span>Date</span><span>Note</span><span style="text-align:right">+Amt</span><span style="text-align:right">Total</span><span></span></div>
       <div class="log-entries" id="sav-entries"></div>
-      <div class="goal-strips" id="sav-strips"></div>
     </div>
     <div class="log-card inv-log">
       <div class="log-ttl-lbl">Total Invested</div>
@@ -503,9 +501,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 0
           <button class="btn" id="il-add">+ Add</button>
         </div>
       </div>
-      <div class="log-tbl-head"><span>Date</span><span>Note</span><span style="text-align:right">+Amt</span><span style="text-align:right">Total</span><span></span></div>
       <div class="log-entries" id="inv-entries"></div>
-      <div class="goal-strips" id="inv-strips"></div>
     </div>
   </div>
 </div>
@@ -554,7 +550,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 0
 
 </div>
 <script>
-const SK='fin-v6';
+const SK='fin-v7';
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 let period='monthly';
 let curMonth=''; // "2026-05" format
@@ -576,7 +572,11 @@ function todayStr(){const d=new Date();return d.toISOString().split('T')[0];}
 function monthKey(d){if(!d)d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 function monthLabel(key){const[y,m]=key.split('-');return MONTHS[parseInt(m)-1]+' '+y;}
 function getMonthState(){
-  if(!S.months[curMonth]) S.months[curMonth]={income:0,budget:{needs:[],wants:[],savings:[]}};
+  if(!S.months[curMonth]) S.months[curMonth]={income:0,budget:{
+    needs:[{name:'Rent / Mortgage',amount:0},{name:'Groceries',amount:0},{name:'Utilities',amount:0},{name:'Insurance',amount:0},{name:'Transport',amount:0}],
+    wants:[{name:'Dining Out',amount:0},{name:'Subscriptions',amount:0},{name:'Entertainment',amount:0}],
+    savings:[{name:'Emergency Fund',amount:0},{name:'Investments',amount:0}]
+  }};
   return S.months[curMonth];
 }
 function bucketTotal(b){
@@ -743,7 +743,7 @@ function recalc(){
   });
   document.getElementById('sv-inc').textContent=fmt(inc);
   document.getElementById('sv-sp').textContent=fmt(spent);
-  document.getElementById('sv-pct').textContent=inc>0?Math.round((spent/inc)*100)+'% of income':'--';
+  document.getElementById('sv-pct').textContent=inc>0?Math.round((spent/inc)*100)+'% of income':(spent>0?'no income set':'--');
   const re=document.getElementById('sv-rem');re.textContent=fmt(rem);re.className='sum-val '+(rem>=0?'pos':'neg');
   document.getElementById('sv-yr').textContent=fmt(tot.savings*12);
   document.getElementById('leg-n').textContent=fmt(tot.needs);document.getElementById('leg-w').textContent=fmt(tot.wants);
@@ -823,48 +823,84 @@ function addLogEntry(type){
 function renderLogEntries(type,cid){
   var el=document.getElementById(cid);el.innerHTML='';
   var log=S.logs[type];
-  if(!log.length){el.innerHTML='<div class="log-empty">No entries yet</div>';return;}
-  var run=0;
-  log.forEach(function(entry,i){
-    run+=entry.amount;
-    var row=document.createElement('div');row.className='log-entry';
-    var di=document.createElement('input');di.type='date';di.className='lce lce-date';di.value=entry.date;
-    di.addEventListener('change',function(e){log[i].date=e.target.value||entry.date;S.logs[type].sort(function(a,b){return a.date.localeCompare(b.date);});renderLogs();save();});
-    var ni=document.createElement('input');ni.type='text';ni.className='lce lce-note';ni.value=entry.note;ni.placeholder='Note';
-    ni.addEventListener('blur',function(e){log[i].note=e.target.value;save();});
-    var ai=document.createElement('input');ai.type='number';ai.className='lce lce-amt';ai.value=entry.amount;ai.min='0';
-    var ca=function(e){var v=parseFloat(e.target.value)||0;if(v<=0){e.target.value=entry.amount;return;}log[i].amount=v;renderLogs();save();};
-    ai.addEventListener('blur',ca);ai.addEventListener('keydown',function(e){if(e.key==='Enter'){ca(e);ai.blur();}});
-    var rv=document.createElement('span');rv.className='lce-run';rv.textContent=fmt(run);
-    var dl=document.createElement('button');dl.className='lce-del';dl.textContent='\u00d7';
-    dl.addEventListener('click',function(){S.logs[type].splice(i,1);renderLogs();recalc();save();});
-    row.append(di,ni,ai,rv,dl);el.appendChild(row);
-  });
-}
-function renderStrips(type,cid){
-  var el=document.getElementById(cid);
-  var tg=S.goals.filter(function(g){return g.type===type;});
-  if(!tg.length){el.innerHTML='<div style="font-size:.63rem;color:var(--text3);padding-top:9px;">Create a goal in the Goals tab to track progress here.</div>';return;}
-  el.innerHTML='';
-  tg.forEach(function(g){
-    var contrib=getLogTotal(g.id,type);
+  var goalsForType=S.goals.filter(function(g){return g.type===type;});
+  if(!log.length&&!goalsForType.length){el.innerHTML='<div class="log-empty">No entries yet</div>';return;}
+  // Group entries by goal
+  var goalGroups={};
+  log.forEach(function(entry,i){entry._idx=i;if(entry.goalId){if(!goalGroups[entry.goalId])goalGroups[entry.goalId]=[];goalGroups[entry.goalId].push(entry);}});
+  var ungrouped=log.filter(function(e){return !e.goalId;});
+  ungrouped.forEach(function(e){e._idx=log.indexOf(e);});
+  // Render each goal as collapsible card
+  goalsForType.forEach(function(g){
+    var entries=goalGroups[g.id]||[];
+    var goalTotal=entries.reduce(function(s,e){return s+e.amount;},0);
     var target=g.target||0;
-    var pct=target>0?Math.min((contrib/target)*100,100):0;
-    var d=document.createElement('div');
-    d.innerHTML='<div class="gstrip-head"><span class="gstrip-name">'+g.name+'</span><span class="gstrip-val">'+fmt(contrib)+(target>0?' of '+fmt(target):'')+'</span></div><div class="gstrip-bar"><div class="gstrip-fill" style="width:'+pct+'%"></div></div><div class="gstrip-pct">'+(target>0?pct.toFixed(1)+'% complete':'--')+'</div>';
-    el.appendChild(d);
+    var pct=target>0?Math.min((goalTotal/target)*100,100):0;
+    var sec=document.createElement('div');
+    sec.style.cssText='margin-bottom:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;';
+    // Header row
+    var hdr=document.createElement('div');
+    hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;background:var(--surface2);user-select:none;';
+    var left=document.createElement('div');left.style.cssText='display:flex;align-items:center;gap:8px;';
+    var chev=document.createElement('span');chev.style.cssText='font-size:.6rem;color:var(--text3);transition:transform .2s;display:inline-block;';chev.innerHTML='&#9654;';
+    var nm=document.createElement('span');nm.style.cssText='font-size:.88rem;font-weight:500;color:'+(type==='savings'?'var(--savings)':'var(--invest)')+';';nm.textContent=g.name;
+    var cnt=document.createElement('span');cnt.style.cssText='font-size:.7rem;color:var(--text3);';cnt.textContent=entries.length+' entr'+(entries.length===1?'y':'ies');
+    left.append(chev,nm,cnt);
+    var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px;';
+    var amt=document.createElement('span');amt.style.cssText='font-size:.88rem;font-weight:500;color:var(--text);';amt.textContent=fmt(goalTotal)+(target>0?' / '+fmt(target):'');
+    var pc=document.createElement('span');pc.style.cssText='font-size:.72rem;color:var(--text3);';pc.textContent=target>0?pct.toFixed(1)+'%':'';
+    right.append(amt,pc);
+    hdr.append(left,right);
+    // Progress bar
+    var pb=document.createElement('div');pb.style.cssText='padding:0 14px 8px;background:var(--surface2);';
+    pb.innerHTML='<div style="height:3px;background:var(--surface3);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:'+(type==='savings'?'var(--savings)':'var(--invest)')+';border-radius:3px;"></div></div>';
+    // Body (collapsed)
+    var bd=document.createElement('div');bd.style.cssText='display:none;padding:8px 14px 10px;background:var(--surface);';
+    hdr.addEventListener('click',function(){var o=bd.style.display!=='none';bd.style.display=o?'none':'block';chev.style.transform=o?'':'rotate(90deg)';});
+    entries.forEach(function(entry){
+      var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);';
+      var di=document.createElement('input');di.type='date';di.className='lce lce-date';di.value=entry.date;
+      di.addEventListener('change',function(){log[entry._idx].date=di.value;S.logs[type].sort(function(a,b){return a.date.localeCompare(b.date);});renderLogs();save();});
+      var ni=document.createElement('input');ni.type='text';ni.className='lce lce-note';ni.value=entry.note;ni.placeholder='Note';
+      ni.addEventListener('blur',function(){log[entry._idx].note=ni.value;save();});
+      var ai=document.createElement('input');ai.type='number';ai.className='lce lce-amt';ai.value=entry.amount;ai.min='0';
+      ai.addEventListener('blur',function(){var v=parseFloat(ai.value)||0;if(v<=0){ai.value=entry.amount;return;}log[entry._idx].amount=v;renderLogs();recalc();save();});
+      var dl=document.createElement('button');dl.className='lce-del';dl.textContent='\u00d7';
+      dl.addEventListener('click',function(){S.logs[type].splice(entry._idx,1);renderLogs();recalc();save();});
+      row.append(di,ni,ai,dl);bd.appendChild(row);
+    });
+    if(!entries.length){bd.innerHTML='<div style="font-size:.8rem;color:var(--text3);padding:8px 0;">No entries yet</div>';}
+    sec.append(hdr,pb,bd);el.appendChild(sec);
   });
+  if(ungrouped.length){
+    var ug=document.createElement('div');ug.style.cssText='margin-top:8px;padding-top:8px;border-top:1px solid var(--border);';
+    ug.innerHTML='<div style="font-size:.76rem;color:var(--text3);margin-bottom:6px;">Unlinked entries</div>';
+    ungrouped.forEach(function(entry){
+      var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);';
+      var di=document.createElement('input');di.type='date';di.className='lce lce-date';di.value=entry.date;
+      di.addEventListener('change',function(){log[entry._idx].date=di.value;renderLogs();save();});
+      var ni=document.createElement('input');ni.type='text';ni.className='lce lce-note';ni.value=entry.note;
+      ni.addEventListener('blur',function(){log[entry._idx].note=ni.value;save();});
+      var ai=document.createElement('input');ai.type='number';ai.className='lce lce-amt';ai.value=entry.amount;ai.min='0';
+      ai.addEventListener('blur',function(){var v=parseFloat(ai.value)||0;if(v<=0){ai.value=entry.amount;return;}log[entry._idx].amount=v;renderLogs();recalc();save();});
+      var dl=document.createElement('button');dl.className='lce-del';dl.textContent='\u00d7';
+      dl.addEventListener('click',function(){S.logs[type].splice(entry._idx,1);renderLogs();recalc();save();});
+      row.append(di,ni,ai,dl);ug.appendChild(row);
+    });
+    el.appendChild(ug);
+  }
 }
+
 function renderLogs(){
   syncDropdowns();
   var st=S.logs.savings.reduce(function(s,e){return s+e.amount;},0);
   document.getElementById('sav-total').textContent=fmt(st);
   document.getElementById('sav-count').textContent=S.logs.savings.length+' entr'+(S.logs.savings.length===1?'y':'ies');
-  renderLogEntries('savings','sav-entries');renderStrips('savings','sav-strips');
+  renderLogEntries('savings','sav-entries');
   var it=S.logs.invest.reduce(function(s,e){return s+e.amount;},0);
   document.getElementById('inv-total').textContent=fmt(it);
   document.getElementById('inv-count').textContent=S.logs.invest.length+' entr'+(S.logs.invest.length===1?'y':'ies');
-  renderLogEntries('invest','inv-entries');renderStrips('invest','inv-strips');
+  renderLogEntries('invest','inv-entries');
 }
 document.getElementById('sl-add').addEventListener('click',function(){addLogEntry('savings');});
 document.getElementById('il-add').addEventListener('click',function(){addLogEntry('invest');});
@@ -929,7 +965,15 @@ function addGoal(){
 }
 function deleteGoal(id){
   var i=S.goals.findIndex(function(g){return g.id===id;});
-  if(i>-1){S.goals.splice(i,1);renderGoals();syncDropdowns();save();}
+  if(i>-1){
+    // Remove the goal
+    var goalType=S.goals[i].type;
+    S.goals.splice(i,1);
+    // Remove all log entries linked to this goal
+    S.logs.savings=S.logs.savings.filter(function(e){return e.goalId!==id;});
+    S.logs.invest=S.logs.invest.filter(function(e){return e.goalId!==id;});
+    renderGoals();syncDropdowns();renderLogs();recalc();save();
+  }
 }
 function updateGoalField(id,field,val){
   var g=S.goals.find(function(g){return g.id===id;});if(!g)return;
